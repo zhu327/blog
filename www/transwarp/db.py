@@ -28,7 +28,7 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 import threading, functools, logging
 
 # 数据库引擎对象:
-class _Engine(obeject):
+class _Engine(object):
     def __init__(self, connect):
         self._connect = connect
 
@@ -37,13 +37,13 @@ class _Engine(obeject):
 
 engine = None
 
-def create_engine(user, password, db, host='127.0.0.1', port=3306, **kw):
+def create_engine(user, passwd, db, host='127.0.0.1', port=3306, **kw):
     import MySQLdb
     global engine
     if engine:
         raise ValueError('engine already created')
-    params = dict(user=user, password=password, db=db, host=host, port=port)    
-    defaults = dict(use_unicode=True, charset='utf8', collation='utf8_general_ci', autocommit=False)
+    params = dict(user=user, passwd=passwd, db=db, host=host, port=port)    
+    defaults = dict(use_unicode=True, charset='utf8', autocommit=False)
     for k in kw.iterkeys():
         if k in defaults:
             defaults.pop(k)
@@ -53,7 +53,7 @@ def create_engine(user, password, db, host='127.0.0.1', port=3306, **kw):
     logging.info('create engine %s' % id(engine))
 
 # 持有数据库连接的上下问对象:
-class _DbCtx(obeject):
+class _DbCtx(object):
     def __init__(self):
         self.connect = None
         self.transactions = 0
@@ -92,6 +92,12 @@ class _LasyConnection(object):
             logging.info('create MySQL connect %s' % id(self.connect))
         return self.connect.cursor()
 
+    def commit(self):
+        self.connect.commit()
+
+    def rollback(self):
+        self.connect.rollback()
+
 class _ConnectionCxt(object):
     def __enter__(self):
         global _db_cxt
@@ -112,9 +118,9 @@ def connection():
 def with_connection(func):
     @functools.wraps(func)
     def _wrapper(*args, **kw):
-        with connection:
+        with connection():
             return func(*args, **kw)
-        return _wrapper
+    return _wrapper
 
 # 事务上下文对象:
 class _TransactionCxt(object):
@@ -154,9 +160,28 @@ class _TransactionCxt(object):
 
 @with_connection
 def select(sql, *args):
+    '''
+    Execute select SQL and return list or empty list if no result.
+
+    >>> update('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 200, 'Wall.E', 'wall.e@test.org', 'back-to-earth')
+    1L
+    >>> update('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 201, 'Eva','eva@test.org', 'back-to-earth')
+    1L
+    >>> L = select('select * from user where id=?', 900900900)
+    >>> L
+    []
+    >>> L = select('select * from user where id=?', 200)
+    >>> L[0]['email']
+    u'wall.e@test.org'
+    >>> L = select('select * from user where passwd=? order by id desc', 'back-to-earth')
+    >>> L[0]['name']
+    u'Eva'
+    >>> L[1]['name']
+    u'Wall.E'
+    '''
     global _db_cxt
     sql = sql.replace('?', '%s')
-    logging.info('select sql: %s, args: ' % (sql, args))
+    logging.info('select sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
         cursor = _db_cxt.cursor()
@@ -172,7 +197,7 @@ def select(sql, *args):
 def update(sql, *args):
     global _db_cxt                                                                                                                         
     sql = sql.replace('?', '%s')
-    logging.info('select sql: %s, args: ' % (sql, args))
+    logging.info('select sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
         cursor = _db_cxt.cursor()
@@ -189,6 +214,9 @@ def update(sql, *args):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    create_engine('root', '', 'test')
+    update('drop table if exists user')
+    update('create table user (id int primary key, name text, email text, passwd text)')
     import doctest
     doctest.testmod()
 
