@@ -25,7 +25,7 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 # 1
 '''
 
-import threading, logging
+import threading, functools, logging
 
 # 数据库引擎对象:
 class _Engine(obeject):
@@ -36,6 +36,21 @@ class _Engine(obeject):
         return self._connect()
 
 engine = None
+
+def create_engine(user, password, db, host='127.0.0.1', port=3306, **kw):
+    import MySQLdb
+    global engine
+    if engine:
+        raise ValueError('engine already created')
+    params = dict(user=user, password=password, db=db, host=host, port=port)    
+    defaults = dict(use_unicode=True, charset='utf8', collation='utf8_general_ci', autocommit=False)
+    for k in kw.iterkeys():
+        if k in defaults:
+            defaults.pop(k)
+    params.update(defaults)
+    params.update(kw)
+    engine = _Engine(lambda: MySQLdb.connect(**params))
+    logging.info('create engine %s' % id(engine))
 
 # 持有数据库连接的上下问对象:
 class _DbCtx(obeject):
@@ -59,6 +74,24 @@ class _DbCtx(obeject):
 
 _db_cxt = _DbCtx()
 
+# 数据库建立连接
+class _LasyConnection(object):
+    def __init__(self):
+        self.connect = None
+
+    def cleanup(self):
+        if self.connect:
+            self.connect.close()
+            logging.info('close MySQL connect %s' % id(self.connect))
+            self.connect = None
+
+    def cursor(self):
+        global engine
+        if not self.connect:
+            self.connect = engine.connect()
+            logging.info('create MySQL connect %s' % id(self.connect))
+        return self.connect.cursor()
+
 class _ConnectionCxt(object):
     def __enter__(self):
         global _db_cxt
@@ -75,6 +108,13 @@ class _ConnectionCxt(object):
 
 def connection():
     return _ConnectionCxt()
+
+def with_connection(func):
+    @functools.wraps(func)
+    def _wrapper(*args, **kw):
+        with connection:
+            return func(*args, **kw)
+        return _wrapper
 
 # 事务上下文对象:
 class _TransactionCxt(object):
@@ -101,16 +141,51 @@ class _TransactionCxt(object):
                 _db_cxt.cleanup()
 
     def commit(self):
-       global _db_cxt
-       try:
-           _db_cxt.connect.commit()
-       except:
-           _db_cxt.connect.rollback()
-           raise
+        global _db_cxt
+        try:
+            _db_cxt.connect.commit()
+        except:
+            _db_cxt.connect.rollback()
+            raise
 
     def rollback(self):
         global _db_cxt
         _db_cxt.connect.rollback()
+
+@with_connection
+def select(sql, *args):
+    global _db_cxt
+    sql = sql.replace('?', '%s')
+    logging.info('select sql: %s, args: ' % (sql, args))
+    cursor = None
+    try:
+        cursor = _db_cxt.cursor()
+        cursor.execute(sql, args)
+        if cursor.description:
+            names = [x[0] for x in cursor.description]
+        return [dict(zip(names, x)) for x in cursor.fetchall()]
+    finally:
+        if cursor:
+            cursor.close()
+
+@with_connection
+def update(sql, *args):
+    global _db_cxt                                                                                                                         
+    sql = sql.replace('?', '%s')
+    logging.info('select sql: %s, args: ' % (sql, args))
+    cursor = None
+    try:
+        cursor = _db_cxt.cursor()
+        cursor.execute(sql, args)
+        r = cursor.rowcount
+        if _db_cxt.transactions == 0:
+            _db_cxt.connect.commit()
+            logging.info('auto commit')
+        return r
+    finally:
+        if cursor:
+            cursor.close()
+    
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
