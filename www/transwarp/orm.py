@@ -29,7 +29,7 @@ class Field(object):
         self.name = kw.get('name', None)
         self._default = kw.get('default', None)
         self.primary_key = kw.get('primary_key', False)
-        self.not_null = kw.get('not_null', False)
+        self.nullable = kw.get('nullable', True)
         self.updateable = kw.get('updateable', True)
         self.insertable = kw.get('insertable', True)
         self.datatype = kw.get('datatype', None)
@@ -70,12 +70,12 @@ class ModelMetaClass(type):
                         primary_key = k
                     else:
                         raise TypeError(r'primary key is already set %s, %s shuold be nomarl' % (primary_key, k))
-                    if not v.not_null:
+                    if v.nullable:
                         logging.warning(r"primary key can't null")
-                        v.not_null = True
-                    if v.insertable:
+                        v.nullable = False
+                    if v.updateable:
                         logging.warning(r"primary key can't update")
-                        v.insertable = False
+                        v.updateable = False
                 if not v.name:
                     v.name = k
                 mapping[k] = v
@@ -123,7 +123,7 @@ class Model(dict):
     # 通过主键获取一行数据，返回对象
     @classmethod
     def get(cls, pk):
-        l = db.select('select * form %s where %s=?' %  (cls.__table__, cls.__primary_key__,), pk)
+        l = db.select('select * from `%s` where `%s`=?' %  (cls.__table__, cls.__primary_key__,), pk)
         return cls(**l[0]) if l else None
 
     # 通过对象插入数据
@@ -138,10 +138,12 @@ class Model(dict):
         >>> user1 = User(id=1, name='a')
         >>> user2 = User(id=2, name='b')
         >>> user1.insert()
+        {'name': 'a', 'id': 1}
         >>> user2.insert()
+        {'name': 'b', 'id': 2}
         >>> d = User.get(1)
         >>> d.id
-        1
+        1L
         >>> d.name
         u'a'
         '''
@@ -155,6 +157,112 @@ class Model(dict):
         db.insert(self.__table__, **params)
         return self
 
+    @classmethod
+    def find_first(cls, where, *arg):
+        l = db.select('select * from `%s` `%s`' % (cls.__table__, where), *arg)
+        return cls(**l[0]) if l else None
+
+    @classmethod
+    def find_all(cls):
+        '''
+        >>> class User(Model):
+        ...     __table__ = 'user'
+        ...     id = IntegerField(primary_key=True)
+        ...     name = StringField()
+        >>> user5 = User(id=5, name='a')
+        >>> user6 = User(id=6, name='b')
+        >>> user5.insert()
+        {'name': 'a', 'id': 5}
+        >>> user6.insert()
+        {'name': 'b', 'id': 6}
+        >>> User.find_all()
+        [{'id': 5L, 'name': u'a'}, {'id': 6L, 'name': u'b'}, {'id': 7L, 'name': u'a'}, {'id': 8L, 'name': u'a'}]
+        '''
+        l = db.select('select * from `%s`' % cls.__table__)
+        return [cls(**x) for x in l]
+
+    @classmethod
+    def find_by(cls, where, *args):
+        l = db.select('select * from `%s` `%s`' % (cls.__table__, where), *args) 
+        return [cls(**x) for x in l]
+
+    @classmethod
+    def count_all(cls):
+        '''
+        >>> class User(Model):
+        ...     __table__ = 'user'
+        ...     id = IntegerField(primary_key=True)
+        ...     name = StringField()
+        >>> user7 = User(id=7, name='a')
+        >>> user8 = User(id=8, name='a')
+        >>> user7.insert()
+        {'name': 'a', 'id': 7}
+        >>> user8.insert()
+        {'name': 'a', 'id': 8}
+        >>> User.count_all()
+        2L
+        '''
+        return db.select_int('select count(*) from `%s`' % cls.__table__)
+
+    @classmethod
+    def count_by(cls, where, *args):
+        return db.select_int('select count(*) from `%s` `%s`' % (cls.__table__, where), *args)
+
+    def update(self):
+        '''
+        update data
+
+        >>> class User(Model):
+        ...     __table__ = 'user'
+        ...     id = IntegerField(primary_key=True)
+        ...     name = StringField()
+        >>> user1 = User.get(1)
+        >>> user1.name = 'hello'
+        >>> user1.update()
+        {'id': 1L, 'name': 'hello'}
+        >>> user1 = User.get(1)
+        >>> user1.name
+        u'hello'
+        '''
+        l = []
+        args = []
+        for k, v in self.__mapping__.iteritems():
+            if v.updateable:
+               l.append(v.name)
+               args.append(getattr(self, k, v.default))
+        l = ['`%s`=?' % x for x in l]
+        args.append(getattr(self, self.__primary_key__))
+        sql = 'update `%s` set %s where `%s`=?' % (self.__table__, ','.join(l), self.__mapping__[self.__primary_key__].name)
+        db.execute(sql, *args)
+        return self
+
+    def delete(self):
+        '''
+        delete object form db
+        
+        >>> class User(Model):
+        ...     __table__ = 'user'
+        ...     id = IntegerField(primary_key=True)
+        ...     name = StringField()
+        >>> user3 = User(id=3, name='a')
+        >>> user3.insert()
+        {'name': 'a', 'id': 3}
+        >>> d = User.get(3)
+        >>> d
+        {'id': 3L, 'name': u'a'}
+        >>> d.delete()
+        {'id': 3L, 'name': u'a'}
+        >>> User.get(3) == None
+        True
+        '''
+        sql = 'delete from `%s` where `%s`=?' % (self.__table__, self.__mapping__[self.__primary_key__].name)
+        db.execute(sql, getattr(self, self.__primary_key__))
+        return self
+
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    db.create_engine('root', '', 'test')
+    db.execute('drop table if exists user')
+    db.execute('create table user (id int primary key, name varchar(255))')
     import doctest
     doctest.testmod()
