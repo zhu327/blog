@@ -124,6 +124,20 @@ def with_connection(func):
 
 # 事务上下文对象:
 class _TransactionCxt(object):
+    '''
+    Transaction test
+    
+    >>> user1 = dict(id=51,name='ta',passwd='tata',email='ta@test.org')
+    >>> user2 = dict(id=52,name='haha',passwd='hahahhah',email='ta@test.org')
+    >>> with _TransactionCxt():
+    ...     insert('user', **user1)
+    ...     insert('user', **user2)
+    1L
+    1L
+    >>> l = select('select `id` from `user`')
+    >>> len(l)
+    2
+    '''
     def __enter__(self):
         global _db_cxt
         self.should_cleanup = False
@@ -140,10 +154,11 @@ class _TransactionCxt(object):
             if _db_cxt.transactions == 0:
                 if exctype == None:
                     self.commit()
+                    logging.info('transaction commit')
                 else:
                     self.rollback()
         finally:
-            if self.should_cleanup == 0:
+            if self.should_cleanup:
                 _db_cxt.cleanup()
 
     def commit(self):
@@ -158,14 +173,17 @@ class _TransactionCxt(object):
         global _db_cxt
         _db_cxt.connect.rollback()
 
+def transaction():
+    return _TransactionCxt()
+
 @with_connection
 def select(sql, *args):
     '''
     Execute select SQL and return list or empty list if no result.
 
-    >>> update('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 200, 'Wall.E', 'wall.e@test.org', 'back-to-earth')
+    >>> execute('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 200, 'Wall.E', 'wall.e@test.org', 'back-to-earth')
     1L
-    >>> update('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 201, 'Eva','eva@test.org', 'back-to-earth')
+    >>> execute('insert into `user` (`id`,`name`,`email`,`passwd`) values (?,?,?,?)', 201, 'Eva','eva@test.org', 'back-to-earth')
     1L
     >>> L = select('select * from user where id=?', 900900900)
     >>> L
@@ -194,10 +212,10 @@ def select(sql, *args):
             cursor.close()
 
 @with_connection
-def update(sql, *args):
+def execute(sql, *args):
     global _db_cxt                                                                                                                         
     sql = sql.replace('?', '%s')
-    logging.info('select sql: %s, args: %s' % (sql, args))
+    logging.info('execute sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
         cursor = _db_cxt.cursor()
@@ -211,12 +229,52 @@ def update(sql, *args):
         if cursor:
             cursor.close()
     
+def insert(table, **kw):
+    '''
+    Insert date to table
+
+    >>> user1 = dict(id=101, name='Timmy', email='tim@test.org', passwd='h1w2d3b4')
+    >>> user2 = dict(id=102, name='Tom', email='tom@test.org', passwd='tomlike')
+    >>> insert('user', **user1)
+    1L
+    >>> insert('user', **user2)
+    1L
+    >>> l = select('select * from `user` where `id`=?', 101)
+    >>> l[0]['passwd']
+    u'h1w2d3b4'
+    >>> l = select('select * from `user` where `id`=?', 102)
+    >>> l[0]['email']
+    u'tom@test.org'
+    >>> insert('user', **user1)
+    Traceback (most recent call last):
+      ...
+    IntegrityError: (1062, "Duplicate entry '101' for key 'PRIMARY'")
+    '''
+    names, args = zip(*kw.iteritems())
+    sql = 'insert into `%s` (%s) values (%s)' % (table, ','.join('`%s`' % x for x in names), \
+        ','.join('?' for i in range(len(names))))
+    return execute(sql, *args)
+
+
+def select_int(sql, *args):
+    '''
+    select row count
+
+    >>> select_int('select count(*) from `user`')
+    6L
+    >>> select_int('select count(id) from `user` where `id`=?', 101)
+    1L
+    '''
+    l = select(sql, *args)
+    if len(l) != 1:
+        raise
+    return l[0].values()[0]
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     create_engine('root', '', 'test')
-    update('drop table if exists user')
-    update('create table user (id int primary key, name text, email text, passwd text)')
+    execute('drop table if exists user')
+    execute('create table user (id int primary key, name text, email text, passwd text)')
     import doctest
     doctest.testmod()
 
