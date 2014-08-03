@@ -106,7 +106,7 @@ def _gen_sql(table_name, mappings):
         nullable = v.nullable
         if v.primary_key:
             pk = v.name
-        sql.append(nullable and '    %s %s,' % (v.name, datatype) or '    %s %s not null,' % (v.name, datatype))
+        sql.append(nullable and '    `%s` %s,' % (v.name, datatype) or '    `%s` %s not null,' % (v.name, datatype))
     sql.append('    primary key(`%s`)' % pk)
     sql.append(');')
     return '\n'.join(sql)

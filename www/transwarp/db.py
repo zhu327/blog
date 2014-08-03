@@ -25,7 +25,12 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 # 1
 '''
 
-import threading, functools, logging
+import threading, functools, uuid, time, logging
+
+def next_id(t=None):
+    if not t:
+        t = time.time()
+    return '%015d%s000' % (int(t*1000), uuid.uuid4().hex)
 
 # 数据库引擎对象:
 class _Engine(object):
