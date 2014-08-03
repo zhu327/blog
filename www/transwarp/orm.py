@@ -4,7 +4,7 @@
 __author__ = 'zhu327'
 
 '''
-ORM ¶ÔÏó¹ØÏµÓ³Éä
+ORM å¯¹è±¡å…³ç³»æ˜ å°„
 
 from transwarp.orm import Model, StringField, IntegerField
 
@@ -13,12 +13,12 @@ class User(Mode):
     id = IntegerField(primary_key=True)
     name = StringField()
 
-# Ö±½ÓÍ¨¹ıÀà·½·¨À´²éÑ¯
+# ç›´æ¥é€šè¿‡ç±»æ–¹æ³•æ¥æŸ¥è¯¢
 user = User.get('123')
 
-# ´´½¨ÊµÀı:
+# åˆ›å»ºå®ä¾‹:
 user = User(id=123, name='Michael')
-# ´æÈëÊı¾İ¿â:
+# å­˜å…¥æ•°æ®åº“:
 user.insert()
 '''
 
@@ -55,7 +55,63 @@ class StringField(Field):
             kw['datatype'] = 'varchar(255)'
         super(StringField, self).__init__(**kw)
 
-# »ùÀà£¬´´½¨ORMÓ³Éä
+class FloatField(Field):
+
+    def __init__(self, **kw):
+        if not 'default' in kw:
+            kw['default'] = 0.0
+        if not 'datatype' in kw:
+            kw['datatype'] = 'real'
+        super(FloatField, self).__init__(**kw)
+
+class BooleanField(Field):
+
+    def __init__(self, **kw):
+        if not 'default' in kw:
+            kw['default'] = False
+        if not 'datatype' in kw:
+            kw['datatype'] = 'bool'
+        super(BooleanField, self).__init__(**kw)
+
+class TextField(Field):
+
+    def __init__(self, **kw):
+        if not 'default' in kw:
+            kw['default'] = ''
+        if not 'datatype' in kw:
+            kw['datatype'] = 'text'
+        super(TextField, self).__init__(**kw)
+
+class BlobField(Field):
+
+    def __init__(self, **kw):
+        if not 'default' in kw:
+            kw['default'] = ''
+        if not 'datatype' in kw:
+            kw['datatype'] = 'blob'
+        super(BlobField, self).__init__(**kw)
+
+class VersionField(Field):
+
+    def __init__(self, name=None):
+        super(VersionField, self).__init__(name=name, default=0, ddl='bigint')
+
+def _gen_sql(table_name, mappings):
+    pk = None
+    sql = ['-- generating SQL for %s:' % table_name, 'create table `%s` (' % table_name]
+    for v in mappings.values():
+        if not hasattr(v, 'datatype'):
+            raise StandardError('no data type in field %s' % v)
+        datatype = v.datatype
+        nullable = v.nullable
+        if v.primary_key:
+            pk = v.name
+        sql.append(nullable and '    %s %s,' % (v.name, datatype) or '    %s %s not null,' % (v.name, datatype))
+    sql.append('    primary key(`%s`)' % pk)
+    sql.append(');')
+    return '\n'.join(sql)
+
+# åŸºç±»ï¼Œåˆ›å»ºORMæ˜ å°„
 class ModelMetaClass(type):                                                                                                              
     def __new__(cls, clsname, bases, attrs):
         if clsname == 'Model':
@@ -82,11 +138,12 @@ class ModelMetaClass(type):
         if not primary_key:
             raise TypeError(r'there is no primary key')
         if not '__table__' in attrs:
-            atter['__table__'] = clsname.lower()
+            attrs['__table__'] = clsname.lower()
         for k in mapping.iterkeys():
             attrs.pop(k)
         attrs['__mapping__'] = mapping
         attrs['__primary_key__'] = primary_key
+        attrs['__sql__'] = lambda self: _gen_sql(attrs['__table__'], mapping)
         return super(ModelMetaClass, cls).__new__(cls, clsname, bases, attrs) 
 
 class Model(dict):
@@ -120,13 +177,13 @@ class Model(dict):
     def __setattr__(self, key, value):
         self[key] = value 
 
-    # Í¨¹ıÖ÷¼ü»ñÈ¡Ò»ĞĞÊı¾İ£¬·µ»Ø¶ÔÏó
+    # é€šè¿‡ä¸»é”®è·å–ä¸€è¡Œæ•°æ®ï¼Œè¿”å›å¯¹è±¡
     @classmethod
     def get(cls, pk):
         l = db.select('select * from `%s` where `%s`=?' %  (cls.__table__, cls.__primary_key__,), pk)
         return cls(**l[0]) if l else None
 
-    # Í¨¹ı¶ÔÏó²åÈëÊı¾İ
+    # é€šè¿‡å¯¹è±¡æ’å…¥æ•°æ®
     def insert(self):
         '''
         insert object to db
@@ -159,7 +216,7 @@ class Model(dict):
 
     @classmethod
     def find_first(cls, where, *arg):
-        l = db.select('select * from `%s` `%s`' % (cls.__table__, where), *arg)
+        l = db.select('select * from `%s` %s' % (cls.__table__, where), *arg)
         return cls(**l[0]) if l else None
 
     @classmethod
@@ -183,7 +240,7 @@ class Model(dict):
 
     @classmethod
     def find_by(cls, where, *args):
-        l = db.select('select * from `%s` `%s`' % (cls.__table__, where), *args) 
+        l = db.select('select * from `%s` %s' % (cls.__table__, where), *args) 
         return [cls(**x) for x in l]
 
     @classmethod
@@ -206,7 +263,7 @@ class Model(dict):
 
     @classmethod
     def count_by(cls, where, *args):
-        return db.select_int('select count(*) from `%s` `%s`' % (cls.__table__, where), *args)
+        return db.select_int('select count(*) from `%s` %s' % (cls.__table__, where), *args)
 
     def update(self):
         '''
