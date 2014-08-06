@@ -42,7 +42,7 @@ rasie seeother('/signin')
 rasie notfound()
 '''
 
-import threading, urllib, cgi, datetime
+import threading, urllib, cgi, datetime, re
 
 # 全局ThreadLocal对象
 ctx = threading.local()
@@ -184,6 +184,38 @@ class Request(object):
         '''
         return dict(**self._get_cookie())
 
+_RE_TZ = re.compile('^([\+\-])([0-9]{1,2})\:([0-9]{1,2})$')
+
+class UTC(datetime.tzinfo):
+	
+    def __init__(self, utc):
+        utc = str(utc.strip().upper())
+        mt = _RE_TZ.match(utc)
+        if mt:
+            minus = mt.group(1)=='-'
+            h = int(mt.group(2))
+            m = int(mt.group(3))
+            if minus:
+                h, m = (-h), (-m)
+            self._utcoffset = datetime.timedelta(hours=h, minutes=m)
+            self._tzname = 'UTC%s' % utc
+        else:
+            raise ValueError('bad utc time zone')
+
+    def utcoffset(self, dt):
+        return self._utcoffset
+
+    def dst(self, dt):
+        return _TIMEDELTA_ZERO
+
+    def tzname(self, dt):
+        return self._tzname
+
+    def __str__(self):
+        return 'UTC tzinfo object (%s)' % self._tzname
+
+    __repr__ = __str__
+
 UTC_0 = UTC('+00:00')
 
 # response对象
@@ -206,8 +238,8 @@ class Response(object):
 
         >>> r = Response()
         >>> r.set_cookie('company', 'Abc, Inc.', max_age=3600)
-        >>> r._cookies
-        {'company': 'company=Abc%2C%20Inc.; Max-Age=3600; Path=/'}
+        >>> r._cookie
+        {'company': 'company=Abc%2C%20Inc.; Max_Age=3600; Path=/'}
         '''
         if not hasattr(self, '_cookie'):
             self._cookie = {}
@@ -217,7 +249,7 @@ class Response(object):
                 l.append('Expires=%s' % datetime.datetime.fromtimestamp(expires, UTC_0).strftime('%a, %d-%b-%Y %H:%M:%S GMT'))
             if isinstance(expires, (datetime.datetime, datetime.time)):
                 l.append('Expires=%s' % expires.astimezone(UTC_0).strftime('%a, %d-%b-%Y %H:%M:%S GMT'))
-        elif isinstance(max_age, (int, long)):
+        if isinstance(max_age, (int, long)):
             l.append('Max_Age=%s' % max_age)
         l.append('Path=%s' % path)
         self._cookie[name] = '; '.join(l)
@@ -232,11 +264,103 @@ class Response(object):
 
 # 定义GET
 def get(path):
-    pass
+    '''
+    >>> @get('/hello')
+    ... def test():
+    ...     return None
+    >>> test.__route__
+    '/hello'
+    >>> test.__method__
+    'GET'
+    '''
+    def _decorate(func):
+        func.__route__ = path
+        func.__method__ = 'GET'
+        return func
+    return _decorate
 
 # 定义post
 def post(path):
-    pass
+    '''
+    >>> @post('/admin')
+    ... def test():
+    ...     return None
+    >>> test.__method__
+    'POST'
+    >>> test.__route__
+    '/admin'
+    '''
+    def _decorate(func):
+        func.__route__ = path
+        func.__method__ = 'POST'
+        return func
+    return _decorate
+
+_re_route = re.compile(r'(\:[a-zA-Z_]\w*)') # 匹配只要是有:的就认为是有参数
+
+# 构建参数分离的正则表达式:abc/ 即名为abc的参数
+def _build_regex(path):
+    '''
+    
+    >>> _build_regex('/:path') == '^\\/(?P<path>[^\\/]+)$'
+    True
+    >>> _build_regex('/:id/:user/commout/') == '^\\/(?P<id>[^\\/]+)\\/(?P<user>[^\\/]+)\\/commout\\/$'
+    True
+    >>> _build_regex('/path/to/:file') == '^\\/path\\/to\\/(?P<file>[^\\/]+)$'
+    True
+    '''
+    re_list = ['^']
+    is_var = False
+    for v in _re_route.split(path):
+        if is_var:
+            varname = v[1:]
+            re_list.append('(?P<%s>[^\\/]+)' % varname)
+        else:
+            s = ''
+            for c in v:
+                if c>='0' and c<='9':
+                    s = s + c
+                elif c>='a' and c<='z':
+                    s = s + c
+                elif c>='A' and c<='Z':
+                    s = s + c
+                else:
+                    s = s + '\\' + c # 加\\是转移为\在r'\-'与'\\-'等同，在正则表达式下r'\-'等同'-'
+            re_list.append(s)
+        is_var = not is_var
+    re_list.append('$')
+    return ''.join(re_list)
+
+# 定制url路由
+class Route(object):
+    '''
+    >>> @get('/:id/active')
+    ... def test(arg):
+    ...     print 'test', arg
+    >>> r = Route(test)
+    >>> r.is_static
+    False
+    >>> r.match('/tim/active')
+    ('tim',)
+    >>> r('tim')
+    test tim
+    '''
+    def __init__(self, func):
+        self.path = func.__route__
+        self.method = func.__method__
+        self.is_static = _re_route.search(self.path) is None # 判断path是否有参数
+        if not self.is_static:
+            self.route = re.compile(_build_regex(self.path)) # 构造参数匹配正则表达式
+        self.func = func
+
+    def match(self, path):
+        m = self.route.match(path)
+        if m:
+            return m.groups()
+        return None
+
+    def __call__(self, *args):
+        return self.func(*args)
 
 # 定义模版
 def view(path):
@@ -262,11 +386,27 @@ class Jinja2TemplateEngine(TemplateEngine):
 
 class WSGIApplication(object):
     def __init__(self, document_root=None, **kw):
-        pass
+        self._get_static = {}
+        self._post_static = {}
+
+        self._get_dynamic = []
+        self._post_dynamic = []
 
     # 添加一个URL定义
     def add_url(self, func):
-        pass
+        self._check_not_running()
+        route = Route(func)
+        if route.is_static:
+            if route.method == 'GET':
+                self._get_static[route.path] = route
+            elif route.method == 'POST':
+                self._post_static[route.path] = route
+        else:
+            if route.method == 'GET':
+                self._get_dynamic.append(route)
+            elif route.method == 'POST':
+                self._post_dynamic.append(route)
+        logging.info('add route %s ' % route.method+':'+route.path)
 
     # 添加一个Interceptor定义
     def add_interceptor(self, func):
