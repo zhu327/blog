@@ -42,7 +42,7 @@ rasie seeother('/signin')
 rasie notfound()
 '''
 
-import threading, urllib, cgi, datetime, re
+import threading, urllib, cgi, datetime, re, logging, functools
 
 # 全局ThreadLocal对象
 ctx = threading.local()
@@ -50,6 +50,13 @@ ctx = threading.local()
 # http 错误类
 class HttpError(Exception):
     pass
+
+def notfound():
+    return HttpError(404)
+    
+def badrequest():
+    return HttpError(400)
+
 
 def _to_unicode(s, encoding='utf-8'):
     return s.decode(encoding)
@@ -364,11 +371,127 @@ class Route(object):
 
 # 定义模版
 def view(path):
-    pass
+    '''
+    >>> @view('index.html')
+    ... def test():
+    ...     return dict(a=123,b=234)
+    >>> t = test()
+    >>> t.template_name
+    'index.html'
+    >>> t.model
+    {'a': 123, 'b': 234}
+    '''
+    def _decorater(func):
+        @functools.wraps(func)
+        def _wrapper(*args, **kw):
+            r = func(*args, **kw)
+            if isinstance(r, dict):
+                return Template(path, **r)
+            raise ValueError('func result must be dict')
+        return _wrapper
+    return _decorater
+
+_RE_INTERCEPTROR_STARTS_WITH = re.compile(r'^([^\*\?]+)\*?$')
+_RE_INTERCEPTROR_ENDS_WITH = re.compile(r'^\*([^\*\?]+)$')
+
+# 设置拦截器的匹配正则表达式
+def _build_pattern_fn(pattern):
+    m = _RE_INTERCEPTROR_STARTS_WITH.match(pattern)
+    if m:
+        return lambda p: p.startswith(m.group(1))
+    m = _RE_INTERCEPTROR_ENDS_WITH.match(pattern)
+    if m:
+        return lambda p: p.endswith(m.group(1))
+    raise ValueError('pattern define interceptor')
 
 # 定义拦截器
-def interceptor(pattern):
-    pass
+def interceptor(pattern='/'):
+    '''
+    >>> @interceptor('*/api')
+    ... def test():
+    ...     return None
+    >>> test.__interceptor__('hello/api')
+    True
+    >>> @interceptor('/api/*')
+    ... def func():
+    ...     return None
+    >>> func.__interceptor__('/api/get/')
+    True
+    '''
+    def _decorator(func):
+        func.__interceptor__ = _build_pattern_fn(pattern)
+        return func
+    return _decorator
+
+# 工具函数，匹配path时拦截器起作用
+def _build_interceptor_fn(func, next):
+    def _wrapper():
+        if func.__interceptor__(ctx.request.path_info):
+            return func(next)
+        else:
+            return next()
+    return _wrapper
+
+# 工具函数，遍历所有的拦截器，如果匹配到path就用拦截器包住
+def _build_interceptor_chain(last_fn, *interceptor):
+    '''
+    >>> def target():
+    ...     print 'test'
+    ...     return 123
+    >>> @interceptor('/')
+    ... def f1(next):
+    ...     print 'before f1'
+    ...     try:
+    ...         return next()
+    ...     finally:
+    ...         print 'after f1'
+    >>> @interceptor('/api')
+    ... def f2(next):
+    ...     print 'before f2'
+    ...     return next()
+    >>> @interceptor('/')
+    ... def f3(next):
+    ...     print 'before f3'
+    ...     try:
+    ...         return next()
+    ...     finally:
+    ...         print 'after f3'
+    >>> class Test(object):
+    ...     path_info = '/api'
+    >>> ctx.request = Test()
+    >>> chain = _build_interceptor_chain(target, f1, f2, f3)
+    >>> chain()
+    before f1
+    before f2
+    before f3
+    test
+    after f3
+    after f1
+    123
+    >>> class Test2(object):
+    ...     path_info = '/test'
+    >>> ctx.request = Test2()
+    >>> chain = _build_interceptor_chain(target, f1, f2, f3)
+    >>> chain()
+    before f1
+    before f3
+    test
+    after f3
+    after f1
+    123
+    '''
+    L = list(interceptor)
+    L.reverse()
+    fn = last_fn
+    for f in L:
+        fn = _build_interceptor_fn(f, fn)
+    return fn
+
+# 模版与model映射类 
+class Template(object):
+    def __init__(self, template_name, **kw):
+        self.template_name = template_name
+        self.model = dict(**kw)
 
 # 定义模版引擎
 class TemplateEngine(object):
@@ -392,6 +515,12 @@ class WSGIApplication(object):
         self._get_dynamic = []
         self._post_dynamic = []
 
+        self._interceptors = []
+
+    def _check_not_running(self):
+        if self._running:
+            raise RuntimeError("can't modify WSGIApplication when it is running")
+
     # 添加一个URL定义
     def add_url(self, func):
         self._check_not_running()
@@ -410,21 +539,90 @@ class WSGIApplication(object):
 
     # 添加一个Interceptor定义
     def add_interceptor(self, func):
-        pass
+        self._check_not_running()
+        self._interceptors.append(func)
+        logging.info('add interceptor %s ' % func.func_name)
 
     # 设置TemplateEngine
     @property
     def template_engine(self):
-        pass
+        self._template_engine
 
     @template_engine.setter
     def template_engine(self, engine):
-        pass
+        self._temlate_engine = engine
 
     # 返回WSGI处理函数
     def get_wsgi_application(self):
+        self._check_not_running()
+        self._running = True
+
+        # 根据method与path路由获取处理函数，分为一般的和带参数的
+        def fn_route():
+            path = ctx.request.path_info
+            method = ctx.request.method
+            if method == 'GET':
+                fn = self._get_static.get(path, None)
+                if fn:
+                    return fn()
+                for fn in self._get_dynamic:
+                    args = fn.match(path)
+                    if args:
+                        return fn(*args)
+                return notfound()
+            if method == 'POST':
+                fn = self._post_static.get(path, None)
+                if fn:
+                    return fn()
+                for fn in self._post_dynamic:
+                    args = fn.match(path)
+                    if args:
+                        return fn(*args)
+                return notfound()
+            return badrequest()
+
+        # 对于处理函数包裹上拦截器规则
+        fn_exec = _build_interceptor_chain(fn_route, *self._interceptors) 
+
+        # WSGI入口处理函数
         def wsgi(env, statr_response):
-            pass
+            ctx.request = Request(env)
+            response = ctx.response = Response()
+            try:
+                r = fn_exec()
+                if isinstance(r, Template):
+                    r = self._temlate_engine(r.template_name, r.model)
+                elif isinstance(r, unicode):
+                    r = r.encode('utf-8')
+                else:
+                    r = []
+                statr_response(response.status, response.headers)
+                return r
+            #except RedirectError, e:
+            #    response.set_header('Location', e.location)
+            #    start_response(e.status, response.headers)
+            #    return []
+            except HttpError, e:
+                start_response(e.status, response.headers)
+                return ['<html><body><h1>', e.status, '</h1></body></html>']
+            #except Exception, e:
+            #    logging.exception(e)
+            #    if not debug:
+            #        start_response('500 Internal Server Error', [])
+            #        return ['<html><body><h1>500 Internal Server Error</h1></body></html>']
+            #    exc_type, exc_value, exc_traceback = sys.exc_info()
+            #    fp = StringIO()
+            #    traceback.print_exception(exc_type, exc_value, exc_traceback, file=fp)
+            #    stacks = fp.getvalue()
+            #    fp.close()
+            #    start_response('500 Internal Server Error', [])
+            #    return [
+            #       r'''<html><body><h1>500 Internal Server Error</h1><div style="font-family:Monaco, Menlo, Consolas, 'Courier New', monospace;"><pre>''',
+            #        stacks.replace('<', '&lt;').replace('>', '&gt;'),
+            #        '</pre></div></body></html>']
+            finally:
+                del ctx.request
+                del ctx.response
         return wsgi
 
     # 开发模式下直接启动服务器
