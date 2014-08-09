@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+'''
+WSGIApplication 运行步骤
+1.创建数据库引擎
+2.创建wsgi
+3.创建模版引擎
+4.注册模版引擎到wsgi
+5.wsgi注册urls路由
+6.运行wsgi
+'''
+
 import logging; logging.basicConfig(level=logging.INFO)
 import os
 

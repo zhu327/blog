@@ -200,6 +200,23 @@ def notfound():
 def badrequest():
     return HttpError(400)
 
+def _to_str(s):
+    '''
+    Convert to str.
+
+    >>> _to_str('s123') == 's123'
+    True
+    >>> _to_str(u'\u4e2d\u6587') == '\xe4\xb8\xad\xe6\x96\x87'
+    True
+    >>> _to_str(-123) == '-123'
+    True
+    '''
+    if isinstance(s, str):
+        return s
+    if isinstance(s, unicode):
+        return s.encode('utf-8')
+    return str(s)
+
 def _to_unicode(s, encoding='utf-8'):
     return s.decode(encoding)
 
@@ -383,7 +400,10 @@ class Response(object):
 
     # 设置header
     def set_header(self, key, value):
-        self._headers[key] = value
+        key = name.upper()
+        if not key in _RESPONSE_HEADER_DICT:
+            key = name
+        self._headers[key] = _to_str(value)
 
     # 设置Cookie
     def set_cookie(self, name, value, max_age=None, expires=None, path='/'):
@@ -557,7 +577,7 @@ class StaticFileRoute(object):
         return None
 
     def __call__(self, *args):
-        fpath = os.path.join(ctx.application.document_root, args[0])
+        fpath = os.path.join(ctx.application['document_root'], args[0])
         if not os.path.isfile(fpath):
             raise notfound()
         fext = os.path.splitext(fpath)[1]
@@ -762,7 +782,7 @@ class WSGIApplication(object):
             self._get_dynamic.append(StaticFileRoute())
         self._running = True
 
-        _application = dict(document_root=self._document_root)
+        _application = dict(document_root=self._document_root) # 这里只在取静态文件时有用，传入一个目录
 
         # 根据method与path路由获取处理函数，分为一般的和带参数的
         def fn_route():
