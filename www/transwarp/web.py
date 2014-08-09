@@ -42,21 +42,119 @@ rasie seeother('/signin')
 rasie notfound()
 '''
 
-import threading, urllib, cgi, datetime, re, logging, functools
+import threading, urllib, cgi, datetime, re, logging, functools, mimetypes, os, sys
+
+_RESPONSE_STATUSES = {
+    # Informational
+    100: 'Continue',
+    101: 'Switching Protocols',
+    102: 'Processing',
+
+    # Successful
+    200: 'OK',
+    201: 'Created',
+    202: 'Accepted',
+    203: 'Non-Authoritative Information',
+    204: 'No Content',
+    205: 'Reset Content',
+    206: 'Partial Content',
+    207: 'Multi Status',
+    226: 'IM Used',
+
+    # Redirection
+    300: 'Multiple Choices',
+    301: 'Moved Permanently',
+    302: 'Found',
+    303: 'See Other',
+    304: 'Not Modified',
+    305: 'Use Proxy',
+    307: 'Temporary Redirect',
+
+    # Client Error
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    402: 'Payment Required',
+    403: 'Forbidden',
+    404: 'Not Found',
+    405: 'Method Not Allowed',
+    406: 'Not Acceptable',
+    407: 'Proxy Authentication Required',
+    408: 'Request Timeout',
+    409: 'Conflict',
+    410: 'Gone',
+    411: 'Length Required',
+    412: 'Precondition Failed',
+    413: 'Request Entity Too Large',
+    414: 'Request URI Too Long',
+    415: 'Unsupported Media Type',
+    416: 'Requested Range Not Satisfiable',
+    417: 'Expectation Failed',
+    418: "I'm a teapot",
+    422: 'Unprocessable Entity',
+    423: 'Locked',
+    424: 'Failed Dependency',
+    426: 'Upgrade Required',
+
+    # Server Error
+    500: 'Internal Server Error',
+    501: 'Not Implemented',
+    502: 'Bad Gateway',
+    503: 'Service Unavailable',
+    504: 'Gateway Timeout',
+    505: 'HTTP Version Not Supported',
+    507: 'Insufficient Storage',
+    510: 'Not Extended',
+}
+
+_HEADER_X_POWERED_BY = ('X-Powered-By', 'transwarp/1.0')
+
+_RE_RESPONSE_STATUS = re.compile(r'^\d{3}(\ \w+)?')
 
 # 全局ThreadLocal对象
 ctx = threading.local()
 
 # http 错误类
 class HttpError(Exception):
-    pass
+    '''
+    >>> e = HttpError(404)
+    >>> e.status
+    '404 Not Found'
+    '''
+    def __init__(self, code):
+        super(HttpError, self).__init__()
+        self.status = '%d %s' % (code, _RESPONSE_STATUSES[code])
+
+    def headr(self, name, value):
+        if not hasattr(self, '_header'):
+            self._headr = [_HEADER_X_POWERED_BY]
+        self._header.append((name, value))
+
+    @property
+    def headers(self):
+        if hasattr(self, '_header'):
+            return self._header
+        return []
+
+    def __str__(self):
+        return self.status
+
+    __repr__ = __str__
+
+class RedirectError(HttpError):
+    def __init__(self, code, location):
+        super(RedirectError, self).__init__(code)
+        self.location = location
+
+    def __str__(self):
+        return '%s, %s' % (self.status, self.location)
+
+    __repr__ = __str__
 
 def notfound():
     return HttpError(404)
-    
+
 def badrequest():
     return HttpError(400)
-
 
 def _to_unicode(s, encoding='utf-8'):
     return s.decode(encoding)
@@ -68,7 +166,7 @@ class MultiFile(object):
 
 # request 对象
 class Request(object):
-    
+
     def __init__(self, environ):
         self._environ = environ
 
@@ -101,8 +199,6 @@ class Request(object):
         'DEFAULT'
         '''
         return self._get_raw_input().get(key, default)
-            
-
 
     # 返回key-value的dict
     def input(self, **kw):
@@ -147,6 +243,7 @@ class Request(object):
                     d[k[5:].replace('_', '-')] = _to_unicode(v)
             self._headers = d
         return self._headers
+
     # 返回HTTP header
     @property
     def headers(self):
@@ -194,7 +291,7 @@ class Request(object):
 _RE_TZ = re.compile('^([\+\-])([0-9]{1,2})\:([0-9]{1,2})$')
 
 class UTC(datetime.tzinfo):
-	
+
     def __init__(self, utc):
         utc = str(utc.strip().upper())
         mt = _RE_TZ.match(utc)
@@ -230,14 +327,14 @@ class Response(object):
     def __init__(self):
         self._status = '200 OK'
         self._headers = {'CONTENT-TYPE': 'text/html; charset=utf-8'}
-    
+
     @property
     def headers(self):
-        return dict(**self._headers)    
+        return dict(**self._headers)
 
     # 设置header
     def set_header(self, key, value):
-        self._headers[key] = value 
+        self._headers[key] = value
 
     # 设置Cookie
     def set_cookie(self, name, value, max_age=None, expires=None, path='/'):
@@ -265,9 +362,29 @@ class Response(object):
     @property
     def status(self):
         return self._status
+
     @status.setter
     def status(self, value):
-        self._status = value
+
+        if isinstance(value, (int, long)):
+            if value>=100 and value<=900:
+                st = _RESPONSE_STATUSES.get(value, '')
+                if st:
+                    self._status = '%d %s' % (value, st)
+                else:
+                    self._status = str(value)
+            else:
+                raise ValueError('bad response status code %d' % value)
+        elif isinstance(value, basestring):
+            if isinstance(value, unicode):
+                self._status = value.encode('utf-8')
+            if _RE_RESPONSE_STATUS.match(value):
+                self._status = value
+            else:
+                raise ValueError('bad response status code %s' % value)
+        else:
+            raise TypeError('Bad type of response code.')
+
 
 # 定义GET
 def get(path):
@@ -308,7 +425,7 @@ _re_route = re.compile(r'(\:[a-zA-Z_]\w*)') # 匹配只要是有:的就认为是
 # 构建参数分离的正则表达式:abc/ 即名为abc的参数
 def _build_regex(path):
     '''
-    
+
     >>> _build_regex('/:path') == '^\\/(?P<path>[^\\/]+)$'
     True
     >>> _build_regex('/:id/:user/commout/') == '^\\/(?P<id>[^\\/]+)\\/(?P<user>[^\\/]+)\\/commout\\/$'
@@ -368,6 +485,38 @@ class Route(object):
 
     def __call__(self, *args):
         return self.func(*args)
+
+def _static_file_generator(fpath):
+    BLOCK_SIZE = 8192
+    with open(fpath, 'rb') as f:
+        block = f.read(BLOCK_SIZE)
+        while block:
+            yield block
+            block = f.read(BLOCK_SIZE)
+
+# 静态文件路由
+class StaticFileRoute(object):
+
+    def __init__(self):
+        self.method = 'GET'
+        self.is_static = False
+        self.route = re.compile('^/static/(.+)$')
+
+    def match(self, url):
+        if url.startswith('/static/'):
+            return (url[1:], )
+        return None
+
+    def __call__(self, *args):
+        fpath = os.path.join(ctx.application.document_root, args[0])
+        if not os.path.isfile(fpath):
+            raise notfound()
+        fext = os.path.splitext(fpath)[1]
+        ctx.response.content_type = mimetypes.types_map.get(fext.lower(), 'application/octet-stream')
+        return _static_file_generator(fpath)
+
+def favicon_handler():
+    return static_file_handler('/favicon.ico')
 
 # 定义模版
 def view(path):
@@ -487,7 +636,7 @@ def _build_interceptor_chain(last_fn, *interceptor):
         fn = _build_interceptor_fn(f, fn)
     return fn
 
-# 模版与model映射类 
+# 模版与model映射类
 class Template(object):
     def __init__(self, template_name, **kw):
         self.template_name = template_name
@@ -509,6 +658,11 @@ class Jinja2TemplateEngine(TemplateEngine):
 
 class WSGIApplication(object):
     def __init__(self, document_root=None, **kw):
+
+        self._running = False
+
+        self._document_root = document_root
+
         self._get_static = {}
         self._post_static = {}
 
@@ -553,9 +707,13 @@ class WSGIApplication(object):
         self._temlate_engine = engine
 
     # 返回WSGI处理函数
-    def get_wsgi_application(self):
+    def get_wsgi_application(self, debug=False):
         self._check_not_running()
+        if debug:
+            self._get_dynamic.append(StaticFileRoute())
         self._running = True
+
+        _application = Dict(document_root=self._document_root)
 
         # 根据method与path路由获取处理函数，分为一般的和带参数的
         def fn_route():
@@ -582,10 +740,11 @@ class WSGIApplication(object):
             return badrequest()
 
         # 对于处理函数包裹上拦截器规则
-        fn_exec = _build_interceptor_chain(fn_route, *self._interceptors) 
+        fn_exec = _build_interceptor_chain(fn_route, *self._interceptors)
 
         # WSGI入口处理函数
         def wsgi(env, statr_response):
+            ctx.application = _application
             ctx.request = Request(env)
             response = ctx.response = Response()
             try:
@@ -598,28 +757,28 @@ class WSGIApplication(object):
                     r = []
                 statr_response(response.status, response.headers)
                 return r
-            #except RedirectError, e:
-            #    response.set_header('Location', e.location)
-            #    start_response(e.status, response.headers)
-            #    return []
+            except RedirectError, e:
+                response.set_header('Location', e.location)
+                start_response(e.status, response.headers)
+                return []
             except HttpError, e:
                 start_response(e.status, response.headers)
                 return ['<html><body><h1>', e.status, '</h1></body></html>']
-            #except Exception, e:
-            #    logging.exception(e)
-            #    if not debug:
-            #        start_response('500 Internal Server Error', [])
-            #        return ['<html><body><h1>500 Internal Server Error</h1></body></html>']
-            #    exc_type, exc_value, exc_traceback = sys.exc_info()
-            #    fp = StringIO()
-            #    traceback.print_exception(exc_type, exc_value, exc_traceback, file=fp)
-            #    stacks = fp.getvalue()
-            #    fp.close()
-            #    start_response('500 Internal Server Error', [])
-            #    return [
-            #       r'''<html><body><h1>500 Internal Server Error</h1><div style="font-family:Monaco, Menlo, Consolas, 'Courier New', monospace;"><pre>''',
-            #        stacks.replace('<', '&lt;').replace('>', '&gt;'),
-            #        '</pre></div></body></html>']
+            except Exception, e:
+                logging.exception(e)
+                if not debug:
+                    start_response('500 Internal Server Error', [])
+                    return ['<html><body><h1>500 Internal Server Error</h1></body></html>']
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                fp = StringIO()
+                traceback.print_exception(exc_type, exc_value, exc_traceback, file=fp)
+                stacks = fp.getvalue()
+                fp.close()
+                start_response('500 Internal Server Error', [])
+                return [
+                   r'''<html><body><h1>500 Internal Server Error</h1><div style="font-family:Monaco, Menlo, Consolas, 'Courier New', monospace;"><pre>''',
+                    stacks.replace('<', '&lt;').replace('>', '&gt;'),
+                    '</pre></div></body></html>']
             finally:
                 del ctx.request
                 del ctx.response
@@ -642,5 +801,6 @@ else:
 '''
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     import doctest
     doctest.testmod()
