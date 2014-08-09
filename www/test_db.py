@@ -20,3 +20,5 @@ u1.delete()
 u2 = User.find_first('where email=?', 'test@example.com')
 print 'find user:', u2
 
+u = User(name='Test', email='test@example.com', password='1234567890', image='about:blank')
+u.insert()

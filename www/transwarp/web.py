@@ -106,9 +106,53 @@ _RESPONSE_STATUSES = {
     510: 'Not Extended',
 }
 
-_HEADER_X_POWERED_BY = ('X-Powered-By', 'transwarp/1.0')
-
 _RE_RESPONSE_STATUS = re.compile(r'^\d{3}(\ \w+)?')
+
+_RESPONSE_HEADERS = (
+    'Accept-Ranges',
+    'Age',
+    'Allow',
+    'Cache-Control',
+    'Connection',
+    'Content-Encoding',
+    'Content-Language',
+    'Content-Length',
+    'Content-Location',
+    'Content-MD5',
+    'Content-Disposition',
+    'Content-Range',
+    'Content-Type',
+    'Date',
+    'ETag',
+    'Expires',
+    'Last-Modified',
+    'Link',
+    'Location',
+    'P3P',
+    'Pragma',
+    'Proxy-Authenticate',
+    'Refresh',
+    'Retry-After',
+    'Server',
+    'Set-Cookie',
+    'Strict-Transport-Security',
+    'Trailer',
+    'Transfer-Encoding',
+    'Vary',
+    'Via',
+    'Warning',
+    'WWW-Authenticate',
+    'X-Frame-Options',
+    'X-XSS-Protection',
+    'X-Content-Type-Options',
+    'X-Forwarded-Proto',
+    'X-Powered-By',
+    'X-UA-Compatible',
+)
+
+_RESPONSE_HEADER_DICT = dict(zip(map(lambda x: x.upper(), _RESPONSE_HEADERS), _RESPONSE_HEADERS))
+
+_HEADER_X_POWERED_BY = ('X-Powered-By', 'transwarp/1.0')
 
 # 全局ThreadLocal对象
 ctx = threading.local()
@@ -330,7 +374,12 @@ class Response(object):
 
     @property
     def headers(self):
-        return dict(**self._headers)
+        L = [(_RESPONSE_HEADER_DICT.get(k, k), v) for k, v in self._headers.iteritems()]
+        if hasattr(self, '_cookies'):
+            for v in self._cookies.itervalues():
+                L.append(('Set-Cookie', v))
+        L.append(_HEADER_X_POWERED_BY)
+        return L
 
     # 设置header
     def set_header(self, key, value):
@@ -713,7 +762,7 @@ class WSGIApplication(object):
             self._get_dynamic.append(StaticFileRoute())
         self._running = True
 
-        _application = Dict(document_root=self._document_root)
+        _application = dict(document_root=self._document_root)
 
         # 根据method与path路由获取处理函数，分为一般的和带参数的
         def fn_route():
@@ -743,7 +792,7 @@ class WSGIApplication(object):
         fn_exec = _build_interceptor_chain(fn_route, *self._interceptors)
 
         # WSGI入口处理函数
-        def wsgi(env, statr_response):
+        def wsgi(env, start_response):
             ctx.application = _application
             ctx.request = Request(env)
             response = ctx.response = Response()
@@ -755,7 +804,7 @@ class WSGIApplication(object):
                     r = r.encode('utf-8')
                 else:
                     r = []
-                statr_response(response.status, response.headers)
+                start_response(response.status, response.headers)
                 return r
             except RedirectError, e:
                 response.set_header('Location', e.location)
@@ -788,7 +837,7 @@ class WSGIApplication(object):
     def run(self, port=9000, host='127.0.0.1'):
         from wsgiref.simple_server import make_server
         server = make_server(host, port, self.get_wsgi_application())
-        server.serve_forver()
+        server.serve_forever()
 
 wsgi = WSGIApplication()
 
