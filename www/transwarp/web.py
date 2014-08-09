@@ -760,6 +760,16 @@ class WSGIApplication(object):
                 self._post_dynamic.append(route)
         logging.info('add route %s ' % route.method+':'+route.path)
 
+    # 从模块添加url
+    def add_model(self, mod):
+        self._check_not_running()
+        m = mod
+        logging.info('add model %s' % mod.__name__)
+        for name in dir(m):
+            fn = getattr(m, name)
+            if hasattr(fn, '__route__') and hasattr(fn, '__method__'):
+                self.add_url(fn)
+
     # 添加一个Interceptor定义
     def add_interceptor(self, func):
         self._check_not_running()

@@ -31,7 +31,7 @@ wsgi.template_engine = template_engine
 
 # 加载url中的函数
 import urls
-wsgi.add_url(urls.test_users)
+wsgi.add_model(urls)
 
 # 在9000端口启动wsgi
 wsgi.run(9000)
