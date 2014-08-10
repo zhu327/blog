@@ -32,7 +32,7 @@ def next_id(t=None):
         t = time.time()
     return '%015d%s000' % (int(t*1000), uuid.uuid4().hex)
 
-# 数据库引擎对象:
+# 数据库引擎对象，包装了数据库连接函数
 class _Engine(object):
     def __init__(self, connect):
         self._connect = connect
@@ -47,7 +47,7 @@ def create_engine(user, passwd, db, host='127.0.0.1', port=3306, **kw):
     global engine
     if engine:
         raise ValueError('engine already created')
-    params = dict(user=user, passwd=passwd, db=db, host=host, port=port)    
+    params = dict(user=user, passwd=passwd, db=db, host=host, port=port)
     defaults = dict(use_unicode=True, charset='utf8', autocommit=False)
     for k in kw.iterkeys():
         if k in defaults:
@@ -79,7 +79,7 @@ class _DbCtx(object):
 
 _db_cxt = _DbCtx()
 
-# 数据库建立连接
+# 数据库建立连接，封装基础的数据库操作动作
 class _LasyConnection(object):
     def __init__(self):
         self.connect = None
@@ -131,7 +131,7 @@ def with_connection(func):
 class _TransactionCxt(object):
     '''
     Transaction test
-    
+
     >>> user1 = dict(id=51,name='ta',passwd='tata',email='ta@test.org')
     >>> user2 = dict(id=52,name='haha',passwd='hahahhah',email='ta@test.org')
     >>> with _TransactionCxt():
@@ -218,7 +218,7 @@ def select(sql, *args):
 
 @with_connection
 def execute(sql, *args):
-    global _db_cxt                                                                                                                         
+    global _db_cxt
     sql = sql.replace('?', '%s')
     logging.info('execute sql: %s, args: %s' % (sql, args))
     cursor = None
@@ -233,7 +233,7 @@ def execute(sql, *args):
     finally:
         if cursor:
             cursor.close()
-    
+
 def insert(table, **kw):
     '''
     Insert date to table
@@ -282,4 +282,3 @@ if __name__ == '__main__':
     execute('create table user (id int primary key, name text, email text, passwd text)')
     import doctest
     doctest.testmod()
-

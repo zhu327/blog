@@ -200,6 +200,9 @@ def notfound():
 def badrequest():
     return HttpError(400)
 
+def seeother(location):
+    return RedirectError(303, location)
+
 def _to_str(s):
     '''
     Convert to str.

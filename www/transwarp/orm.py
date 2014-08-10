@@ -25,6 +25,9 @@ user.insert()
 import db, logging
 
 class Field(object):
+
+    _count = 0
+
     def __init__(self, **kw):
         self.name = kw.get('name', None)
         self._default = kw.get('default', None)
@@ -33,6 +36,7 @@ class Field(object):
         self.updateable = kw.get('updateable', True)
         self.insertable = kw.get('insertable', True)
         self.datatype = kw.get('datatype', None)
+        Field._count = Field._count + 1
 
     @property
     def default(self):
@@ -99,7 +103,7 @@ class VersionField(Field):
 def _gen_sql(table_name, mappings):
     pk = None
     sql = ['-- generating SQL for %s:' % table_name, 'create table `%s` (' % table_name]
-    for v in mappings.values():
+    for v in sorted(mappings.values(), lambda x, y: cmp(x._order, y._order))
         if not hasattr(v, 'datatype'):
             raise StandardError('no data type in field %s' % v)
         datatype = v.datatype
@@ -112,7 +116,7 @@ def _gen_sql(table_name, mappings):
     return '\n'.join(sql)
 
 # 基类，创建ORM映射
-class ModelMetaClass(type):                                                                                                              
+class ModelMetaClass(type):
     def __new__(cls, clsname, bases, attrs):
         if clsname == 'Model':
             return super (ModelMetaClass, cls).__new__(cls, clsname, bases, attrs)
@@ -144,7 +148,7 @@ class ModelMetaClass(type):
         attrs['__mapping__'] = mapping
         attrs['__primary_key__'] = primary_key
         attrs['__sql__'] = lambda self: _gen_sql(attrs['__table__'], mapping)
-        return super(ModelMetaClass, cls).__new__(cls, clsname, bases, attrs) 
+        return super(ModelMetaClass, cls).__new__(cls, clsname, bases, attrs)
 
 class Model(dict):
     '''
@@ -175,7 +179,7 @@ class Model(dict):
             raise AttributeError(r'dict obeject has no attr named %s' % key)
 
     def __setattr__(self, key, value):
-        self[key] = value 
+        self[key] = value
 
     # 通过主键获取一行数据，返回对象
     @classmethod
@@ -240,7 +244,7 @@ class Model(dict):
 
     @classmethod
     def find_by(cls, where, *args):
-        l = db.select('select * from `%s` %s' % (cls.__table__, where), *args) 
+        l = db.select('select * from `%s` %s' % (cls.__table__, where), *args)
         return [cls(**x) for x in l]
 
     @classmethod
@@ -296,7 +300,7 @@ class Model(dict):
     def delete(self):
         '''
         delete object form db
-        
+
         >>> class User(Model):
         ...     __table__ = 'user'
         ...     id = IntegerField(primary_key=True)
