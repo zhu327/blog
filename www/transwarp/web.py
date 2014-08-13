@@ -418,10 +418,10 @@ class Response(object):
         Unset header by name and value.
 
         >>> r = Response()
-        >>> r.header('content-type')
+        >>> r.content_type
         'text/html; charset=utf-8'
         >>> r.unset_header('CONTENT-type')
-        >>> r.header('content-type')
+        >>> r.content_type
         '''
         key = name.upper()
         if not key in _RESPONSE_HEADER_DICT:
@@ -441,7 +441,7 @@ class Response(object):
         >>> r.content_type
         'application/json'
         '''
-        return self.header('CONTENT-TYPE')
+        return self._headers.get('CONTENT-TYPE', None)
 
     @content_type.setter
     def content_type(self, value):
