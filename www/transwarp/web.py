@@ -42,7 +42,12 @@ rasie seeother('/signin')
 rasie notfound()
 '''
 
-import threading, urllib, cgi, datetime, re, logging, functools, mimetypes, os, sys
+import threading, urllib, cgi, datetime, re, logging, functools, mimetypes, os, sys, traceback
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 _RESPONSE_STATUSES = {
     # Informational
@@ -402,11 +407,51 @@ class Response(object):
         return L
 
     # 设置header
-    def set_header(self, key, value):
+    def set_header(self, name, value):
         key = name.upper()
         if not key in _RESPONSE_HEADER_DICT:
             key = name
         self._headers[key] = _to_str(value)
+
+    def unset_header(self, name):
+        '''
+        Unset header by name and value.
+
+        >>> r = Response()
+        >>> r.header('content-type')
+        'text/html; charset=utf-8'
+        >>> r.unset_header('CONTENT-type')
+        >>> r.header('content-type')
+        '''
+        key = name.upper()
+        if not key in _RESPONSE_HEADER_DICT:
+            key = name
+        if key in self._headers:
+            del self._headers[key]
+
+    @property
+    def content_type(self):
+        '''
+        Get content type from response. This is a shortcut for header('Content-Type').
+
+        >>> r = Response()
+        >>> r.content_type
+        'text/html; charset=utf-8'
+        >>> r.content_type = 'application/json'
+        >>> r.content_type
+        'application/json'
+        '''
+        return self.header('CONTENT-TYPE')
+
+    @content_type.setter
+    def content_type(self, value):
+        '''
+        Set content type for response. This is a shortcut for set_header('Content-Type', value).
+        '''
+        if value:
+            self.set_header('CONTENT-TYPE', value)
+        else:
+            self.unset_header('CONTENT-TYPE')
 
     # 设置Cookie
     def set_cookie(self, name, value, max_age=None, expires=None, path='/'):
@@ -719,11 +764,14 @@ class TemplateEngine(object):
     def __call__(self, path, model):
         pass
 
-# 缺省使用Jinja2
+# 缺省使用
 class Jinja2TemplateEngine(TemplateEngine):
     def __init__(self, templ_dir, **kw):
         from jinja2 import Environment, FileSystemLoader
         self._env = Environment(loader=FileSystemLoader(templ_dir), **kw)
+
+    def add_filter(self, name, fn_filter):
+        self._env.filters[name] = fn_filter
 
     def __call__(self, path, model):
         return self._env.get_template(path).render(**model).encode('utf-8')
@@ -809,7 +857,7 @@ class WSGIApplication(object):
                     args = fn.match(path)
                     if args:
                         return fn(*args)
-                return notfound()
+                raise notfound()
             if method == 'POST':
                 fn = self._post_static.get(path, None)
                 if fn:
@@ -818,7 +866,7 @@ class WSGIApplication(object):
                     args = fn.match(path)
                     if args:
                         return fn(*args)
-                return notfound()
+                raise notfound()
             return badrequest()
 
         # 对于处理函数包裹上拦截器规则
@@ -835,7 +883,7 @@ class WSGIApplication(object):
                     r = self._temlate_engine(r.template_name, r.model)
                 elif isinstance(r, unicode):
                     r = r.encode('utf-8')
-                else:
+                if r is None:
                     r = []
                 start_response(response.status, response.headers)
                 return r
@@ -869,7 +917,7 @@ class WSGIApplication(object):
     # 开发模式下直接启动服务器
     def run(self, port=9000, host='127.0.0.1'):
         from wsgiref.simple_server import make_server
-        server = make_server(host, port, self.get_wsgi_application())
+        server = make_server(host, port, self.get_wsgi_application(debug=True))
         server.serve_forever()
 
 wsgi = WSGIApplication()

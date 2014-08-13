@@ -103,7 +103,7 @@ class VersionField(Field):
 def _gen_sql(table_name, mappings):
     pk = None
     sql = ['-- generating SQL for %s:' % table_name, 'create table `%s` (' % table_name]
-    for v in sorted(mappings.values(), lambda x, y: cmp(x._order, y._order))
+    for v in sorted(mappings.values(), lambda x, y: cmp(x._order, y._order)):
         if not hasattr(v, 'datatype'):
             raise StandardError('no data type in field %s' % v)
         datatype = v.datatype
