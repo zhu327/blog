@@ -14,6 +14,11 @@ class APIError(StandardError):
         self.data = data
         self.message = massage
 
+class APIValueError(APIError):
+    def __init__(self, field, message=''):
+        super(APIValueError, self).__init__('value:invalid', field, message)
+
+
 # 返回查询好的数据并生成json格式
 def api(func):
     '''
