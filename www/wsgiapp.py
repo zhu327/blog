@@ -12,7 +12,8 @@ WSGIApplication 运行步骤
 '''
 
 import logging; logging.basicConfig(level=logging.INFO)
-import os, time, datetime
+import os, time
+from datetime import datetime
 
 from transwarp import db
 from transwarp.web import WSGIApplication, Jinja2TemplateEngine
@@ -37,7 +38,7 @@ def datetime_filter(t):
     if delta < 604800:
         return u'%s天前' % (delta // 86400)
     dt = datetime.fromtimestamp(t)
-    return u'%s年%s月%s日' % (dt.year, dt.moth, dt.day)
+    return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
 # 初始化Jinja2模版引擎
 template_engine = Jinja2TemplateEngine(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
@@ -51,6 +52,7 @@ wsgi.template_engine = template_engine
 import urls
 wsgi.add_model(urls)
 wsgi.add_interceptor(urls.user_interceptor)
+wsgi.add_interceptor(urls.manage_interceptor)
 
 # 在9000端口启动wsgi
 wsgi.run(9000)
