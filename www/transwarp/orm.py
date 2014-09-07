@@ -26,7 +26,7 @@ import db, logging
 
 class Field(object):
 
-    _count = 0
+    _order = 0
 
     def __init__(self, **kw):
         self.name = kw.get('name', None)
@@ -36,7 +36,8 @@ class Field(object):
         self.updateable = kw.get('updateable', True)
         self.insertable = kw.get('insertable', True)
         self.datatype = kw.get('datatype', None)
-        Field._count = Field._count + 1
+        self.auto_increment = kw.get('increment', False)
+        Field._order = Field._order + 1
 
     @property
     def default(self):
@@ -108,9 +109,12 @@ def _gen_sql(table_name, mappings):
             raise StandardError('no data type in field %s' % v)
         datatype = v.datatype
         nullable = v.nullable
+        increment = v.auto_increment
         if v.primary_key:
             pk = v.name
         sql.append(nullable and '    `%s` %s,' % (v.name, datatype) or '    `%s` %s not null,' % (v.name, datatype))
+        if increment:
+            sql[-1] = sql[-1].rstrip(',') + ' auto_increment,'
     sql.append('    primary key(`%s`)' % pk)
     sql.append(');')
     return '\n'.join(sql)

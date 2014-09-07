@@ -1,46 +1,47 @@
-drop database if exists blogpy;
+-- mysql -u root -p < schema.sql
 
-create database blogpy;
+drop database if exists boz;
 
-use blogpy;
+create database boz;
 
-grant select, insert, update, delete on blogpy.* to 'root'@'localhost' identified by '';
+use boz;
 
-create table users (
-    `id` varchar(50) not null,
+grant select, insert, update, delete on boz.* to 'root'@'localhost' identified by '';
+
+create table `users` (
+    `uid` varchar(50) not null,
     `email` varchar(50) not null,
     `password` varchar(50) not null,
-    `admin` bool not null,
+    `admin` bool  not null,
     `name` varchar(50) not null,
-    `image` varchar(500) not null,
-    `created_at` real not null,
+    `created` real not null,
     unique key `idx_email` (`email`),
-    key `idx_created_at` (`created_at`),
-    primary key (`id`)
+    key `idx_created` (`created`),
+    primary key(`uid`)
 ) engine=innodb default charset=utf8;
 
-create table blogs (
-    `id` varchar(50) not null,
+create table `blogs` (
+    `bid` int(10) not null auto_increment,
     `user_id` varchar(50) not null,
     `user_name` varchar(50) not null,
-    `user_image` varchar(500) not null,
+    `title` varchar(50) not null,
+    `content` text not null,
+    `tags` varchar(50),
+    `created` real not null,
+    key `idx_created` (`created`),
+    primary key(`bid`)
+) engine=innodb default charset=utf8;
+
+create table `tag` (
+    `tid` int(10) not null auto_increment,
     `name` varchar(50) not null,
-    `summary` varchar(200) not null,
-    `content` mediumtext not null,
-    `created_at` real not null,
-    key `idx_created_at` (`created_at`),
-    primary key (`id`)
+    unique key `idx_name` (`name`),
+    primary key(`tid`)
 ) engine=innodb default charset=utf8;
 
-create table comments (
-    `id` varchar(50) not null,
-    `blog_id` varchar(50) not null,
-    `user_id` varchar(50) not null,
-    `user_name` varchar(50) not null,
-    `user_image` varchar(500) not null,
-    `content` mediumtext not null,
-    `created_at` real not null,
-    key `idx_created_at` (`created_at`),
-    primary key (`id`)
+create table `tagmap` (
+    `id` int(10) not null auto_increment,
+    `tid` int(10) not null,
+    `bid` int(10) not null,
+    primary key(`id`)
 ) engine=innodb default charset=utf8;
-
