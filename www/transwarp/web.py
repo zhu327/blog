@@ -357,6 +357,8 @@ class Request(object):
         '''
         return dict(**self._get_cookie())
 
+_TIMEDELTA_ZERO = datetime.timedelta(0)
+
 _RE_TZ = re.compile('^([\+\-])([0-9]{1,2})\:([0-9]{1,2})$')
 
 class UTC(datetime.tzinfo):
@@ -400,9 +402,9 @@ class Response(object):
     @property
     def headers(self):
         L = [(_RESPONSE_HEADER_DICT.get(k, k), v) for k, v in self._headers.iteritems()]
-        if hasattr(self, '_cookies'):
-            for v in self._cookies.itervalues():
-                L.append(('Set-Cookie', v))
+        if hasattr(self, '_cookie'):
+            for v in self._cookie.itervalues():
+                L.append(('Set-Cookie', _to_str(v)))
         L.append(_HEADER_X_POWERED_BY)
         return L
 
@@ -474,6 +476,9 @@ class Response(object):
             l.append('Max_Age=%s' % max_age)
         l.append('Path=%s' % path)
         self._cookie[name] = '; '.join(l)
+
+    def delete_cookie(self, name):
+        self.set_cookie(name, '__delete__', expires=0)
 
     # 设置status
     @property

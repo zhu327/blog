@@ -7,7 +7,7 @@ MVC urls
 
 import re, hashlib, time, logging
 
-from transwarp.web import get, post, view, interceptor, ctx, seeother
+from transwarp.web import get, post, view, interceptor, ctx, seeother, notfound
 from models import User, Blog, Comment
 from apis import api, APIError, APIValueError, Page
 from config import configs
@@ -24,19 +24,19 @@ def check_admin():
 @view('blogs.html')
 @get('/')
 def index():
-    blogs = Blog.find_all()
-    user = User.find_first('where email=?', 'admin@example.com')
-    return dict(user=user, blogs=blogs)
+    user = ctx.request.user
+    blogs, page = _get_blogs_by_page()
+    return dict(user=user, blogs=blogs, page=page)
 
 @api
 @get('/api/users')
 def api_get_users():
-    users = User.find_all()
-    # 消除密码
-    for user in users:
-        user['password'] = '******'
-
-    return dict(users=users)
+    total = User.count_all()
+    page = Page(total, _get_page_index())
+    users = User.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
+    for u in users:
+        u.password = '******'
+    return dict(users=users, page=page)
 
 _RE_MD5 = re.compile(r'^[0-9a-f]{32}$')
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
@@ -94,6 +94,7 @@ def user_interceptor(next):
     user = None
     cookie = ctx.request.cookies.get(_COOKIE_NAME)
     if cookie:
+        logging.info('REQUEST COOKIE: ' + cookie)
         user = parse_signed_cookie(cookie)
     ctx.request.user = user
     return next()
@@ -104,13 +105,13 @@ def parse_signed_cookie(cookie):
         L = cookie.split('-')
         if len(L) != 3:
             return None
-        id, expries, md5 = L
-        if int(expries) < time.time():
+        id, expires, md5 = L
+        if int(expires) < time.time():
             return None
         user = User.get(id)
         if not user:
             return None
-        if md5 != hashlib.md5('%s-%s-%s-%s' % (id, User.password, expires, _COOKIE_KEY)).hexdigest():
+        if md5 != hashlib.md5('%s-%s-%s-%s' % (id, user.password, expires, _COOKIE_KEY)).hexdigest():
             return None
         return user
     except:
@@ -165,7 +166,7 @@ def manage_interceptor(next):
     user = ctx.request.user
     if user and user.admin:
         return next()
-    raise seeother('/sigin')
+    raise seeother('/signin')
 
 @api
 @get('/api/blogs/:blog_id')
@@ -213,7 +214,7 @@ def api_delete_blog(blog_id):
 def api_create_comments(blog_id):
     user = ctx.request.user
     if not user:
-        raise APIValueError('user', 'need sigin.')
+        raise APIValueError('user', 'need signin.')
     blog = Blog.get(blog_id)
     if not blog:
         raise APIValueError(blog_id, 'blog is not exist.')
@@ -241,3 +242,49 @@ def api_get_comments():
     page = Page(total, _get_page_index())
     comments = Comment.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
     return dict(comments=comments, page=page)
+
+@view('blog.html')
+@get('/blog/:blog_id')
+def blog(blog_id):
+    blog = Blog.get(blog_id)
+    if not blog:
+        raise notfound()
+    comments = Comment.find_by('where blog_id=? order by created_at desc limit 1000', blog_id)
+    return dict(blog=blog, comments=comments, user=ctx.request.user)
+
+@view('signin.html')
+@get('/signin')
+def signin():
+    return dict()
+
+@get('/signout')
+def signout():
+    ctx.response.delete_cookie(_COOKIE_NAME)
+    raise seeother('/')
+
+@view('manage_bolg_edit.html')
+@get('/manage/blogs/create')
+def manage_blog_create():
+    return dict(id=None, action='/api/blogs', redirect='/manage/blogs', user=ctx.request.user)
+
+@view('manage_blog_edit.html')
+@get('/manage/blogs/edit/:blog_id')
+def manage_blog_modify(blog_id):
+    blog = Blog.get(blog_id)
+    if not blog:
+        raise notfound()
+    return dict(id=blog.id, name=blog.name, summary=blog.summary, content=blog.content, action='/api/blogs/%s' % blog_id, redirect='/manage/blogs', user=ctx.request.user)
+
+@view('manage_user_list.html')
+@get('/manage/users')
+def manage_users():
+    return dict(page_index=_get_page_index(), user=ctx.request.user)
+
+@get('/manage/')
+def manage_index():
+    raise seeother('/manage/comments')
+
+@view('manage_comment_list.html')
+@get('/manage/comments')
+def manage_comments():
+    return dict(page_index=_get_page_index(), user=ctx.request.user)
