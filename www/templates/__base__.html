@@ -1,72 +1,82 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html>
 <head>
-    <meta charset="utf-8" />
-    {% block meta %}<!-- block meta  -->{% endblock %}
-    <title>{% block title %} ? {% endblock %} - Awesome Python Webapp</title>
-    <link rel="stylesheet" href="/static/css/uikit.min.css">
-    <link rel="stylesheet" href="/static/css/uikit.gradient.min.css">
-    <link rel="stylesheet" href="/static/css/awesome.css" />
-    <script src="/static/js/jquery.min.js"></script>
-    <script src="/static/js/md5.js"></script>
-    <script src="/static/js/uikit.min.js"></script>
-    <script src="/static/js/sticky.min.js"></script>
-    <script src="/static/js/vue.min.js"></script>
-    <script src="/static/js/awesome.js"></script>
-    {% block beforehead %}<!-- before head  -->{% endblock %}
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  {% block meta %}<!-- block meta  -->{% endblock %}
+  <title>{{ title }}</title>
+
+  <link rel="alternate" href="/rss.xml" title="Timmy Zhu&#39;s Blog" type="application/atom+xml">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+  <link rel="stylesheet" href="/static/css/style.css" type="text/css">
+  <link rel="stylesheet" href="/static/css/about.css" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  {% block beforehead %}<!-- before head  -->{% endblock %}
 </head>
+
 <body>
-    <nav class="uk-navbar uk-navbar-attached uk-margin-bottom">
-        <div class="uk-container uk-container-center">
-            <a href="/" class="uk-navbar-brand">Awesome</a>
-            <ul class="uk-navbar-nav">
-                <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i> 日志</a></li>
-                <li><a target="_blank" href="#"><i class="uk-icon-book"></i> 教程</a></li>
-                <li><a target="_blank" href="#"><i class="uk-icon-code"></i> 源码</a></li>
-            </ul>
-            <div class="uk-navbar-flip">
-                <ul class="uk-navbar-nav">
-                {% if user %}
-                    <li class="uk-parent" data-uk-dropdown>
-                        <a href="#0"><i class="uk-icon-user"></i> {{ user.name }}</a>
-                        <div class="uk-dropdown uk-dropdown-navbar">
-                            <ul class="uk-nav uk-nav-navbar">
-                                <li><a href="/signout"><i class="uk-icon-sign-out"></i> 登出</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                {% else %}
-                    <li><a href="/signin"><i class="uk-icon-sign-in"></i> 登陆</a></li>
-                    <li><a href="/register"><i class="uk-icon-edit"></i> 注册</a></li>
-                {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <div class="wrapper">
+  <header id="header">
+  <div class="title">
+    <h1><a href="/">Timmy Zhu&#39;s Blog</a></h1>
+    <p><a href="/">Python programer, web and javascript fan.</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/archives">Archives</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/rss.xml">RSS</a></li>
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
 
-    <div class="uk-container uk-container-center">
-        <div class="uk-grid">
-            <!-- content -->
-            {% block content %}
-            {% endblock %}
-            <!-- // content -->
-        </div>
-    </div>
+<!-- content -->
+{% block content %}
+{% endblock %}
+<!-- // content -->
 
-    <div class="uk-margin-large-top" style="background-color:#eee; border-top:1px solid #ccc;">
-        <div class="uk-container uk-container-center uk-text-center">
-            <div class="uk-panel uk-margin-top uk-margin-bottom">
-                <p>
-                    <a target="_blank" href="#" class="uk-icon-button uk-icon-weibo"></a>
-                    <a target="_blank" href="#" class="uk-icon-button uk-icon-github"></a>
-                    <a target="_blank" href="#" class="uk-icon-button uk-icon-linkedin-square"></a>
-                    <a target="_blank" href="#" class="uk-icon-button uk-icon-twitter"></a>
-                </p>
-                <p>Powered by <a href="#">Awesome Python Webapp</a>. Copyright &copy; 2014. [<a href="/manage/" target="_blank">Manage</a>]</p>
-                <p><a href="http://www.liaoxuefeng.com/" target="_blank">www.liaoxuefeng.com</a>. All rights reserved.</p>
-                <a target="_blank" href="#"><i class="uk-icon-html5" style="font-size:64px; color: #444;"></i></a>
-            </div>
-        </div>
-    </div>
+  </div>
+<footer id="footer"><div class="copyright">
+
+&copy; 2014 <a href="/">Timmy Zhu</a>
+
+</div>
+<div class="theme-copyright">
+Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+ |
+Redesign by <a href="https://github.com/zhu327" target="_blank">Timmy Zhu</a>
+</div>
+<div class="clearfix"></div></footer>
+<script src="http://cdn.staticfile.org/jquery/1.8.0/jquery.min.js"></script>
+<script src="/static/js/scale.fix.js"></script>
+<script src="/static/js/jquery.imagesloaded.min.js"></script>
+<script src="/static/js/gallery.js"></script>
+
+<!--
+<script type="text/javascript">
+var duoshuoQuery = { short_name: 'heroicyang' };
+(function() {
+  var ds = document.createElement('script');
+  ds.type = 'text/javascript';
+  ds.async = true;
+  ds.src = 'http://static.duoshuo.com/embed.js';
+  ds.charset = 'UTF-8';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();
+</script>
+-->
+
+<link rel="stylesheet" href="http://cdn.staticfile.org/fancybox/2.1.1/jquery.fancybox.css" media="screen" type="text/css">
+<script src="http://cdn.staticfile.org/fancybox/2.1.1/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
 </body>
 </html>

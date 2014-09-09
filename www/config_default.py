@@ -14,5 +14,10 @@ configs = {
     },
     'session': {
         'secret': 'BlogZ'
-    }
+    },
+    'page': {
+        'page_size': 5,
+        'summary_size': 20
+    },
+    'blog_url': '127.0.0.1:9000'
 }

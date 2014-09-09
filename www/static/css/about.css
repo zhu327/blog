@@ -1,0 +1,106 @@
+.about .header {
+  position: relative;
+}
+.about .header .avatar {
+  position: absolute;
+  width: 96px;
+  line-height: 1;
+}
+.about .header .avatar img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 55px !important;
+  -webkit-border-radius: 55px !important;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.25) !important;
+  -webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.25) !important;
+}
+.about .header .profile {
+  padding-top: 4px;
+  padding-left: 120px;
+  vertical-align: middle;
+}
+@media screen and (max-width:580px) {
+  .about .header .profile {
+    padding-left: 2px 0 0 78px;
+  }
+}
+.about .header .profile p {
+  color: #494949;
+  font-weight: bold;
+  text-shadow: rgba(255,255,255,0.9) 0 1px 0;
+  margin-bottom: 0;
+}
+.about .header .social-link {
+  margin-top: 10px;
+}
+.about .header .social-link ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.about .header .social-link ul li {
+  display: inline-block;
+  margin-right: 6px;
+}
+.about .header .social-link .icon {
+  color: #333;
+  display: inline-block;
+  position: relative;
+}
+.about .header .social-link .icon span:before {
+  font: 2em FontAwesome;
+}
+.about .header .social-link .github span:before {
+  content: '\f09b';
+}
+.about .header .social-link .twitter span:before {
+  content: '\f099';
+}
+.about .header .social-link .weibo span:before {
+  content: '\f18a';
+}
+.about .header .social-link .rss span:before {
+  content: '\f09e';
+}
+.about .description {
+  margin-top: 10px;
+  padding-top: 20px;
+}
+.about .recently-read {
+  margin-top: 20px;
+}
+@media screen and (max-width:580px) {
+  .about .recently-read {
+    display: none;
+  }
+}
+.about .recently-read td {
+  border-bottom: 0 !important;
+}
+.about .recently-read td img {
+  width: 105px;
+  height: 110px;
+}
+.about .cc {
+  position: relative;
+  padding-top: 20px;
+  border-top: 1px solid #aaa;
+}
+.about .cc .image {
+  position: absolute;
+  line-height: 1;
+  width: 64px;
+}
+@media screen and (max-width:580px) {
+  .about .cc .image {
+    display: none;
+  }
+}
+.about .cc .license {
+  padding: 12px 0 0 80px;
+}
+@media screen and (max-width:580px) {
+  .about .cc .license {
+    padding: 0;
+  }
+}

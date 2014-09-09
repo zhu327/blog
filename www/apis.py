@@ -6,6 +6,9 @@ __author__ = 'zhu327'
 import json, functools
 
 from transwarp.web import ctx
+from config import configs
+
+_PAGE_SIZE = configs.get('page').get('page_size')
 
 class APIError(StandardError):
     def __init__(self, error, data='', message=''):
@@ -19,7 +22,7 @@ class APIValueError(APIError):
         super(APIValueError, self).__init__('value:invalid', field, message)
 
 class Page(dict):
-    def __init__(self, item_count, page_index=1, page_size=10):
+    def __init__(self, item_count, page_index=1, page_size=_PAGE_SIZE):
         self.item_count = item_count
         self.page_size = page_size
         self.page_count = item_count // page_size + (1 if item_count % page_size > 0 else 0)

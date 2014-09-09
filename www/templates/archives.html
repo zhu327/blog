@@ -1,0 +1,31 @@
+{% extends '__base__.html' %}
+{% set title = "Archives | Timmy Zhu&#39;s Blog" %}
+
+{% block content %}
+    <div class="content">
+    {% for blogs in xblogs %}
+      {% for blog in blogs %}
+      {% if loop.first %}
+      <section class="archives-wrapper">
+        <h2 class="archives-title archives-year">
+          <a href="/archives/{{ blog.year }}">{{ blog.year }}</a>
+        </h2>
+        <div class="archives">
+      {% endif %}
+    <article class="post">
+      <header>
+        <a href="/blog/{{ blog.id }}">
+        <time>
+        {{ blog.created | date }}
+        </time>
+        </a>
+        <h1 class="title"><a href="/blog/{{ blog.id }}">{{ blog.title }}</a></h1>
+      </header>
+    </article>
+    {% if loop.last %}
+    </div></section>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    </div>
+{% endblock %}

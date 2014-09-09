@@ -8,6 +8,7 @@ blogpy 数据库表定义
 '''
 
 import time
+from datetime import datetime
 
 from transwarp.db import next_id
 from transwarp.orm import Model, IntegerField, StringField, BooleanField, FloatField, TextField
@@ -15,7 +16,7 @@ from transwarp.orm import Model, IntegerField, StringField, BooleanField, FloatF
 class User(Model):
     __table__ = 'users'
 
-    uid = StringField(primary_key=True, default=next_id, datatype='varchar(50)')
+    id = StringField(primary_key=True, default=next_id, datatype='varchar(50)')
     email = StringField(updatable=False, datatype='varchar(50)')
     password = StringField(datatype='varchar(50)')
     admin = BooleanField()
@@ -25,23 +26,19 @@ class User(Model):
 class Blog(Model):
     __table__ = 'blogs'
 
-    bid = IntegerField(primary_key=True, increment=True, datatype='int(10)')
+    id = IntegerField(primary_key=True, increment=True, datatype='int(10)')
     user_id = StringField(updatable=False, datatype='varchar(50)')
     user_name = StringField(datatype='varchar(50)')
     title = StringField(datatype='varchar(50)')
+    summary = TextField(datatype='mediumtext')
     content = TextField()
     tags = StringField(datatype='varchar(50)')
     created = FloatField(updatable=False, default=time.time)
+    year = IntegerField(datatype='int(5)', default=datetime.now().year)
 
 class Tag(Model):
     __table__ = 'tag'
 
-    tid = IntegerField(primary_key=True, increment=True, datatype='int(10)')
-    name = StringField(datatype='varchar(50)')
-
-class TagMap(Model):
-    __talbe__ = 'tagmap'
-
     id = IntegerField(primary_key=True, increment=True, datatype='int(10)')
-    tid = IntegerField(datatype='int(10)')
-    bid = IntegerField(datatype='int(10)')
+    name = StringField(datatype='varchar(50)')
+    blogid = IntegerField(datatype='int(10)')

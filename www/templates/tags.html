@@ -1,45 +1,43 @@
 {% extends '__base__.html' %}
-{% set title = "Timmy Zhu&#39;s Blog" %}
+{% set title = "Tag:" ~ tag ~ " | Timmy Zhu&#39;s Blog" %}
 
 {% block content %}
     <div class="content">
+    <h2 class="archives-title tag"><span>{{ tag }}</span></h2>
+
     {% for blog in blogs %}
     <article class="post">
     <header>
 
       <div class="icon"></div>
-      <a href="/blog/{{ blog.id }}">
+      <a href="/blog/{{ bolg_id }}">
       <time>
       {{ blog.created | datetime }}
       </time>
       </a>
-      <h1 class="title"><a href="/blog/{{ blog.id }}">{{ blog.title }}</a></h1>
 
+      <h1 class="title"><a href="/blog/{{ bolg_id }}">{{ blog.title }}</a></h1>
     </header>
 
     <div class="entry">
-        {{blog.summary | html }}
+    {{ blog.summary | html }}
     </div>
     <footer class="end-sep">
-
       <div class="alignleft">
-        <a href="/blog/{{ blog.id }}#more" class="more-link">Read More</a>
+        <a href="/blog/{{ bolg_id }}#more" class="more-link">Read More</a>
       </div>
-
-    <div class="clearfix"></div>
+      <div class="clearfix"></div>
     </footer>
     </article>
     {% endfor %}
-
     <nav id="pagination">
     {% if page.has_previous %}
-    <a href="/page/{{ page.page_index - 1 }}" class="prev">Prev</a>
+    <a href="/tags/{{ tag }}/{{ page.page_index - 1 }}" class="prev">Prev</a>
     {% endif %}
     {% if page.has_next %}
-    <a href="/page/{{ page.page_index + 1 }}" class="next">Next</a>
+    <a href="/tags/{{ tag }}/{{ page.page_index + 1 }}" class="next">Next</a>
     {% endif %}
     <div class="clearfix"></div>
     </nav>
-
     </div>
 {% endblock %}

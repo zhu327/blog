@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title><![CDATA[Timmy Zhu's Blog]]></title>
+  <subtitle><![CDATA[Python programer, web and javascript fan.]]></subtitle>
+  <link href="http://{{ url }}/rss.xml" rel="self"/>
+  <link href="http://{{ url }}"/>
+  <updated>{{ blogs.0.created | rssdate }}</updated>
+  <id>http://{{ url }}/</id>
+  <author>
+    <name><![CDATA[Timmy Zhu]]></name>
+    <email><![CDATA[zhu327@qq.com]]></email>
+  </author>
+  <generator uri="http://github.com/zhu327/boz">Boz</generator>
+  {% for blog in blogs %}
+  <entry>
+    <title type="html"><![CDATA[{{ blog.title }}]]></title>
+    <link href="http://{{ url }}/blog/{{ blog.id }}"/>
+    <id>http://{{ url }}/blog/{{ blog.id }}</id>
+    <published>{{ blog.created | rssdate }}</published>
+    <updated>{{ blog.created | rssdate }}</updated>
+    <content type="html"><![CDATA[{{ blog.content | html }}]]></content>
+    {% for tag in blog.xtags %}
+    <category scheme="http://{{ url }}/tags/{{ tag }}" term="{{ tag }}"/>
+    {% endfor %}
+  </entry>
+  {% endfor %}
+</feed>

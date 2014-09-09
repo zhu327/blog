@@ -7,12 +7,13 @@ MVC urls
 
 import re, hashlib, time, logging
 
+from transwarp import db
 from transwarp.web import get, post, view, interceptor, ctx, seeother, notfound
-from models import User, Blog, Comment
+from models import User, Blog, Tag
 from apis import api, APIError, APIValueError, Page
 from config import configs
 
-_COOKIE_NAME = 'awesession'
+_COOKIE_NAME = 'bozsession'
 _COOKIE_KEY = configs.get('session').get('secret')
 
 def check_admin():
@@ -21,12 +22,101 @@ def check_admin():
         return
     raise APIError('Permission', 'user', 'no permission.')
 
+def _get_page_index():
+    page_index = '1'
+    try:
+        page_index = int(ctx.request.get('page', '1'))
+    except ValueError:
+        pass
+    return page_index
+
+def _get_blogs_by_page(page_index=1):
+    total = Blog.count_all()
+    page = Page(total, page_index)
+    blogs = Blog.find_by('order by created desc limit ?,?', page.offset, page.limit)
+    return blogs, page
+
+def _get_blogs_by_tag(tag, page_index=1):
+    total = Tag.count_by('where `name` = ?', tag)
+    page = Page(total, int(page_index))
+    blogs = Blog.find_by('where `id` in (select `blogid` from tag where `name` = ?) order by created desc limit ?,?', tag, page.offset, page.limit)
+    return blogs, page
+
 @view('blogs.html')
 @get('/')
 def index():
-    user = ctx.request.user
     blogs, page = _get_blogs_by_page()
-    return dict(user=user, blogs=blogs, page=page)
+    return dict(blogs=blogs, page=page)
+
+@view('blogs.html')
+@get('/page/:page_index')
+def page(page_index):
+    blogs, page = _get_blogs_by_page(int(page_index))
+    if not blogs:
+        raise notfound()
+    return dict(blogs=blogs, page=page)
+
+@view('blog.html')
+@get('/blog/:blog_id')
+def blog(blog_id):
+    blog = Blog.get(blog_id)
+    if not blog:
+        raise notfound()
+    if blog.tags:
+        blog.xtags = blog.tags.split(',')
+    return dict(blog=blog)
+
+@view('archives.html')
+@get('/archives')
+def archives():
+    years = db.select('select distinct `year` from `blogs` order by created desc')
+    if not years:
+        raise notfound()
+    xblogs = list()
+    for y in years:
+        blogs = Blog.find_by('where `year` = ? order by created desc', y.get('year'))
+        xblogs.append(blogs)
+    return dict(xblogs=xblogs)
+
+@view('archives.html')
+@get('/archives/:year')
+def archives_year(year):
+    blogs = Blog.find_by('where `year` = ? order by created desc', year)
+    if not blogs:
+        raise notfound()
+    return dict(xblogs=[blogs])
+
+@view('tags.html')
+@get('/tags/:tag')
+def tag(tag):
+    blogs, page = _get_blogs_by_tag(tag)
+    if not blogs:
+        raise notfound()
+    return dict(blogs=blogs, tag=tag, page=page)
+
+@view('tags.html')
+@get('/tags/:tag/:page_index')
+def tag_page(tag, page_index):
+    blogs, page = _get_blogs_by_tag(tag, page_index)
+    if not blogs:
+        raise notfound()
+    return dict(blogs=blogs, tag=tag, page=page)
+
+@view('about.html')
+@get('/about')
+def about():
+    return dict()
+
+@view('rss.xml')
+@get('/rss.xml')
+def feed():
+    blogs = Blog.find_by('order by created desc limit ?', 10)
+    for blog in blogs:
+        if blog.tags:
+            blog.xtags = blog.tags.split(',')
+    url = configs.get('blog_url')
+    ctx.response.content_type = 'application/xml'
+    return dict(blogs=blogs, url=url)
 
 @api
 @get('/api/users')
@@ -136,12 +226,6 @@ def api_create_blog():
     blog.insert()
     return blog
 
-def _get_blogs_by_page():
-    total = Blog.count_all()
-    page = Page(total, _get_page_index())
-    blogs = Blog.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
-    return blogs, page
-
 @api
 @get('/api/blogs')
 def api_get_blogs():
@@ -152,14 +236,6 @@ def api_get_blogs():
 @get('/manage/blogs')
 def manage_blogs():
     return dict(page_index=_get_page_index(), user=ctx.request.user)
-
-def _get_page_index():
-    page_index = '1'
-    try:
-        page_index = int(ctx.request.get('page', '1'))
-    except ValueError:
-        pass
-    return page_index
 
 @interceptor('/manage/')
 def manage_interceptor(next):
@@ -242,15 +318,6 @@ def api_get_comments():
     page = Page(total, _get_page_index())
     comments = Comment.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
     return dict(comments=comments, page=page)
-
-@view('blog.html')
-@get('/blog/:blog_id')
-def blog(blog_id):
-    blog = Blog.get(blog_id)
-    if not blog:
-        raise notfound()
-    comments = Comment.find_by('where blog_id=? order by created_at desc limit 1000', blog_id)
-    return dict(blog=blog, comments=comments, user=ctx.request.user)
 
 @view('signin.html')
 @get('/signin')
