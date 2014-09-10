@@ -22,14 +22,6 @@ def check_admin():
         return
     raise APIError('Permission', 'user', 'no permission.')
 
-def _get_page_index():
-    page_index = '1'
-    try:
-        page_index = int(ctx.request.get('page', '1'))
-    except ValueError:
-        pass
-    return page_index
-
 def _get_blogs_by_page(page_index=1):
     total = Blog.count_all()
     page = Page(total, page_index)
@@ -117,6 +109,11 @@ def feed():
     url = configs.get('blog_url')
     ctx.response.content_type = 'application/xml'
     return dict(blogs=blogs, url=url)
+
+@view('signin.html')
+@get('/signin')
+def signin():
+    return dict()
 
 @api
 @get('/api/users')
@@ -318,11 +315,6 @@ def api_get_comments():
     page = Page(total, _get_page_index())
     comments = Comment.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
     return dict(comments=comments, page=page)
-
-@view('signin.html')
-@get('/signin')
-def signin():
-    return dict()
 
 @get('/signout')
 def signout():
