@@ -222,6 +222,17 @@ class Model(dict):
         db.insert(self.__table__, **params)
         return self
 
+    def insert_id(self):
+        params = {}
+        for k, v in self.__mapping__.iteritems():
+           if v.insertable:
+               if v.name in self:
+                   params[v.name] = self[k]
+               else:
+                   params[v.name] = v.default
+        id = db.insert_id(self.__table__, **params)
+        return id
+
     @classmethod
     def find_first(cls, where, *arg):
         l = db.select('select * from `%s` %s' % (cls.__table__, where), *arg)
@@ -267,11 +278,11 @@ class Model(dict):
         >>> User.count_all()
         2L
         '''
-        return db.select_int('select count(*) from `%s`' % cls.__table__)
+        return db.select_int('select count(`%s`) from `%s`' % (cls.__primary_key__, cls.__table__))
 
     @classmethod
     def count_by(cls, where, *args):
-        return db.select_int('select count(*) from `%s` %s' % (cls.__table__, where), *args)
+        return db.select_int('select count(`%s`) from `%s` %s' % (cls.__primary_key__, cls.__table__, where), *args)
 
     def update(self):
         '''

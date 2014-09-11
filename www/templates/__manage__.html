@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+
+    <link href="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="http://cdn.staticfile.org/jquery/1.8.3/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="http://cdn.staticfile.org/vue/0.10.5/vue.min.js"></script>
+    <script src="/static/js/md5.js"></script>
+    <script src="/static/js/boz.js"></script>
+    <style>
+    div.nav, div.content {
+        margin: 5em 0 0 0;
+    }
+    .alert {
+        display: none;
+    }
+    </style>
+    {% block beforehead %}<!-- before head  -->{% endblock %}
+  </head>
+  <body>
+<div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span1 offset3">
+        <div class="nav">
+        <ul class="nav nav-list text-right">
+        <li><a href="/">首页</a></li>
+        <li class="divider"></li>
+        {% block nav %}{% endblock %}
+        <li class="divider"></li>
+        <li><a href="#">退出</a></li>
+        </ul>
+        </div>
+    </div>
+    <div class="span5">
+    <div class="content">
+    {% block content %}{% endblock %}
+    </div>
+    </div>
+  </div>
+</div>
+  </body>
+</html>

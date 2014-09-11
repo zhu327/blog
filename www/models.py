@@ -10,35 +10,30 @@ blogpy 数据库表定义
 import time
 from datetime import datetime
 
-from transwarp.db import next_id
 from transwarp.orm import Model, IntegerField, StringField, BooleanField, FloatField, TextField
 
 class User(Model):
-    __table__ = 'users'
+    __table__ = 'user'
 
-    id = StringField(primary_key=True, default=next_id, datatype='varchar(50)')
-    email = StringField(updatable=False, datatype='varchar(50)')
+    id = StringField(primary_key=True, datatype='varchar(50)')
+    email = StringField(datatype='varchar(50)')
     password = StringField(datatype='varchar(50)')
-    admin = BooleanField()
     name = StringField(datatype='varchar(50)')
-    created = FloatField(updatable=False, default=time.time)
 
-class Blog(Model):
+class Blogs(Model):
     __table__ = 'blogs'
 
     id = IntegerField(primary_key=True, increment=True, datatype='int(10)')
-    user_id = StringField(updatable=False, datatype='varchar(50)')
-    user_name = StringField(datatype='varchar(50)')
     title = StringField(datatype='varchar(50)')
     summary = TextField(datatype='mediumtext')
     content = TextField()
     tags = StringField(datatype='varchar(50)')
-    created = FloatField(updatable=False, default=time.time)
-    year = IntegerField(datatype='int(5)', default=datetime.now().year)
+    created = FloatField(updateable=False, default=time.time)
+    year = IntegerField(datatype='int(5)', updateable=False, default=datetime.now().year)
 
-class Tag(Model):
-    __table__ = 'tag'
+class Tags(Model):
+    __table__ = 'tags'
 
     id = IntegerField(primary_key=True, increment=True, datatype='int(10)')
-    name = StringField(datatype='varchar(50)')
-    blogid = IntegerField(datatype='int(10)')
+    tag = StringField(datatype='varchar(50)')
+    blog = IntegerField(datatype='int(10)')

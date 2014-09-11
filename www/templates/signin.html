@@ -11,10 +11,10 @@
     <script src="/static/js/md5.js"></script>
     <script src="/static/js/boz.js"></script>
     <style>
-    .main {
+    div.content {
         border: 1px solid #e5e5e5;
         padding: 20px 20px 0 20px;
-        margin: 50% 12.5% 0 12.5%;
+        margin: 40% 12.5% 0 12.5%;
         border-radius: 5px;
     }
     .alert {
@@ -57,13 +57,13 @@ $(function() {
 <div class="container-fluid">
   <div class="row-fluid">
     <div class="span4 offset4">
-    <div class="main">
+    <div class="content">
 <form id="form-signin" v-on="submit: submit">
     <fieldset>
       <p>登录 BOZ<p>
       <div class="alert"></div>
-      <input v-model="email" class="input-block-level" type="text" name="email" placeholder="Email">
-      <input v-model="password" class="input-block-level" type="password" name="password" placeholder="Password">
+      <input v-model="email" class="input-block-level" type="text" placeholder="Email">
+      <input v-model="password" class="input-block-level" type="password" placeholder="Password">
       <button type="submit" class="btn pull-right">Sign in</button>
     <fieldset>
   </div>

@@ -25,12 +25,7 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 # 1
 '''
 
-import threading, functools, uuid, time, logging
-
-def next_id(t=None):
-    if not t:
-        t = time.time()
-    return '%015d%s000' % (int(t*1000), uuid.uuid4().hex)
+import threading, functools, logging
 
 # 数据库引擎对象，包装了数据库连接函数
 class _Engine(object):
@@ -260,6 +255,26 @@ def insert(table, **kw):
         ','.join('?' for i in range(len(names))))
     return execute(sql, *args)
 
+@with_connection
+def insert_id(table, **kw):
+    names, args = zip(*kw.iteritems())
+    sql = 'insert into `%s` (%s) values (%s)' % (table, ','.join('`%s`' % x for x in names), \
+        ','.join('?' for i in range(len(names))))
+    global _db_cxt
+    sql = sql.replace('?', '%s')
+    logging.info('execute sql: %s, args: %s' % (sql, args))
+    cursor = None
+    try:
+        cursor = _db_cxt.cursor()
+        cursor.execute(sql, args)
+        r = int(cursor.lastrowid)
+        if _db_cxt.transactions == 0:
+            _db_cxt.connect.commit()
+            logging.info('auto commit')
+        return r
+    finally:
+        if cursor:
+            cursor.close()
 
 def select_int(sql, *args):
     '''

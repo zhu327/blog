@@ -11,6 +11,10 @@ WSGIApplication 运行步骤
 6.运行wsgi
 '''
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 import logging; logging.basicConfig(level=logging.INFO)
 import os, time
 from datetime import datetime

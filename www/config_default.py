@@ -17,7 +17,7 @@ configs = {
     },
     'page': {
         'page_size': 5,
-        'summary_size': 20
+        'summary_size': 10
     },
     'blog_url': '127.0.0.1:9000'
 }

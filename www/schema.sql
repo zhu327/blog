@@ -6,24 +6,16 @@ create database boz;
 
 use boz;
 
-grant select, insert, update, delete on boz.* to 'root'@'localhost' identified by '';
-
-create table `users` (
+create table `user` (
     `id` varchar(50) not null,
     `email` varchar(50) not null,
     `password` varchar(50) not null,
-    `admin` bool  not null,
     `name` varchar(50) not null,
-    `created` real not null,
-    unique key `idx_email` (`email`),
-    key `idx_created` (`created`),
     primary key(`id`)
 ) engine=innodb default charset=utf8;
 
 create table `blogs` (
     `id` int(10) not null auto_increment,
-    `user_id` varchar(50) not null,
-    `user_name` varchar(50) not null,
     `title` varchar(50) not null,
     `summary` mediumtext not null,
     `content` text not null,
@@ -34,9 +26,13 @@ create table `blogs` (
     primary key(`id`)
 ) engine=innodb default charset=utf8;
 
-create table `tag` (
+create table `tags` (
     `id` int(10) not null auto_increment,
-    `name` varchar(50) not null,
-    `blogid` int(10) not null,
+    `tag` varchar(50) not null,
+    `blog` int(10) not null,
     primary key(`id`)
 ) engine=innodb default charset=utf8;
+
+INSERT INTO `user` (`id`, `email`, `password`, `name`)
+VALUES
+	('20140911', 'admin@boz.com', 'e10adc3949ba59abbe56e057f20f883e', 'admin');
