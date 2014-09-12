@@ -136,36 +136,15 @@ function gotoPage(index) {
     }
 }
 
-function showConfirm(title, text, fn_ok, fn_cancel) {
-    var s = '<div id="div-confirm" class="uk-modal">' +
-            '<div class="uk-modal-dialog">' +
-            '<a href="#0" class="uk-modal-close uk-close"></a>' +
-            '<h1 class="x-title"></h1>' +
-            '<p class="x-text"></p>' +
-            '<hr><p class="uk-text-center">' +
-            '<button class="uk-button uk-button-primary x-ok"><i class="uk-icon-check"></i> 是</button>' +
-            '&nbsp;&nbsp;&nbsp;' +
-            '<button class="uk-button x-cancel"><i class="uk-icon-times"></i> 否</button>' +
-            '</p></div></div>';
-    $('body').append(s);
-    var m = $('#div-confirm');
-    var modal = new $.UIkit.modal.Modal('#div-confirm');
+function showConfirm(selector, title, text, fn_ok) {
+    var m = $(selector);
     m.find('.x-title').text(title);
     m.find('.x-text').text(text);
     m.find('.x-ok').click(function () {
-        modal.hide();
+        m.modal('hide');
         fn_ok && fn_ok();
     });
-    m.find('.x-cancel').click(function () {
-        modal.hide();
-        fn_cancel && fn_cancel();
-    });
-    m.on({
-        'uk.modal.hide': function() {
-            $('#div-confirm').remove();
-        }
-    });
-    modal.show();
+    m.modal('show');
 }
 
 $(function() {

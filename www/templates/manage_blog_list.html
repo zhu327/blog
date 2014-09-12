@@ -23,7 +23,7 @@ function initVM(data) {
                 location.assign('/manage/blogs/edit/' + blog.id);
             },
             delete_blog: function (blog) {
-                showConfirm('确认删除？', '确认要删除“' + blog.name + '”？删除后不可恢复！', function () {
+                showConfirm('#deleteModal', '确认删除？', '确认要删除“' + blog.title + '”？删除后不可恢复！', function () {
                     postApi('/api/blogs/' + blog.id + '/delete', {}, function (err, r) {
                         if (err) {
                             return showError(err);
@@ -75,11 +75,24 @@ $(function() {
                     <span v-text="blog.created.toDateTime()"></span>
                 </td>
                 <td>
-                    <a href="#0" v-on="click: edit_blog(blog)"><i class="icon-pencil"></i></a>
-                    <a href="#0" v-on="click: delete_blog(blog)"><i class="icon-trash"></i></a>
+                    <a href="#" v-on="click: edit_blog(blog)"><i class="icon-pencil"></i></a>
+                    <a href="#" v-on="click: delete_blog(blog)"><i class="icon-trash"></i></a>
                 </td>
                 </tr>
             </tbody>
         </table>
     </div>
+<div id="deleteModal" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3 class="x-title"></h3>
+  </div>
+  <div class="modal-body">
+    <p class="x-text"></p>
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">取消</a>
+    <a href="#" class="btn btn-primary x-ok">确认</a>
+  </div>
+</div>
 {% endblock %}
