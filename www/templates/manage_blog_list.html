@@ -10,15 +10,15 @@ function initVM(data) {
         el: '#div-blogs',
         data: {
             blogs: data.blogs,
-            //page: data.page
+            page: data.page
         },
         methods: {
-            /*previous: function () {
+            previous: function () {
                 gotoPage(this.page.page_index - 1);
             },
             next: function () {
                 gotoPage(this.page.page_index + 1);
-            },*/
+            },
             edit_blog: function (blog) {
                 location.assign('/manage/blogs/edit/' + blog.id);
             },
@@ -37,11 +37,10 @@ function initVM(data) {
 }
 
 $(function() {
-    getApi('/api/blogs'/*?page={{ page_index }}'*/, function (err, results) {
+    getApi('/api/blogs?page={{ page_index }}', function (err, results) {
         if (err) {
             return showError(err);
         }
-        //$('#div-loading').hide();
         initVM(results);
     });
 });
@@ -81,6 +80,15 @@ $(function() {
                 </tr>
             </tbody>
         </table>
+        <div class="pagination text-center">
+            <ul>
+                <li v-if="! page.has_previous" class="disabled"><span>&laquo;</i></span></li>
+                <li v-if="page.has_previous"><a v-on="click: previous()" href="#0">&laquo;</a></li>
+                <li class="active"><span v-text="page.page_index"></span></li>
+                <li v-if="! page.has_next" class="disabled"><span>&raquo;</span></li>
+                <li v-if="page.has_next"><a v-on="click: next()" href="#0">&raquo;</a></li>
+            </ul>
+        </div>
     </div>
 <div id="deleteModal" class="modal hide fade">
   <div class="modal-header">

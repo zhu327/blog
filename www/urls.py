@@ -16,9 +16,20 @@ from config import configs
 _COOKIE_NAME = 'bozsession'
 _COOKIE_KEY = configs.get('session').get('secret')
 
-def _get_blogs_by_page(page_index=1):
+def _get_page_index():
+    page_index = 1
+    try:
+        page_index = int(ctx.request.get('page', '1'))
+    except ValueError:
+        pass
+    return page_index
+
+def _get_blogs_by_page(page_index=1, page_size=None):
     total = Blogs.count_all()
-    page = Page(total, page_index)
+    if page_size:
+        page = Page(total, page_index, page_size=page_size)
+    else:
+        page = Page(total, page_index)
     blogs = Blogs.find_by('order by created desc limit ?,?', page.offset, page.limit)
     return blogs, page
 
@@ -246,15 +257,20 @@ def api_get_blog(blog_id):
         raise APIValueError(blog_id, 'blog is not exist.')
     return blog
 
+@get('/signout')
+def signout():
+    ctx.response.delete_cookie(_COOKIE_NAME)
+    raise seeother('/')
+
 @view('manage_blog_list.html')
 @get('/manage/blogs')
 def manage_blogs():
-    return dict()
+    return dict(page_index=_get_page_index())
 
 @api
 @get('/api/blogs')
 def api_get_blogs():
-    blogs, page = _get_blogs_by_page()
+    blogs, page = _get_blogs_by_page(_get_page_index(), configs.get('page').get('list_size'))
     return dict(blogs=blogs, page=page)
 
 @api
@@ -289,31 +305,15 @@ def register_user():
     return user
 
 @api
-@get('/api/blogs')
-def api_get_blogs():
-    blogs, page = _get_blogs_by_page()
-    return dict(blogs=blogs, page=page)
-
-@api
 @post('/api/blogs/:blog_id/delete')
 def api_delete_blog(blog_id):
-    #check_admin()
+    check_admin()
     blog = Blogs.get(blog_id)
     if not blog:
         raise APIValueError(blog_id, 'blog is not exist.')
     blog.delete()
     db.execute('delete from `tags` where `blog`=?', blog_id)
     return dict(id=blog_id)
-
-@get('/signout')
-def signout():
-    ctx.response.delete_cookie(_COOKIE_NAME)
-    raise seeother('/')
-
-@view('manage_user_list.html')
-@get('/manage/user')
-def manage_users():
-    return dict(page_index=_get_page_index(), user=ctx.request.user)
 
 @get('/manage/')
 def manage_index():
