@@ -17,9 +17,6 @@
         margin: 40% 12.5% 0 12.5%;
         border-radius: 5px;
     }
-    .alert {
-        display: none;
-    }
     </style>
     <script>
 
@@ -61,7 +58,7 @@ $(function() {
 <form id="form-signin" v-on="submit: submit">
     <fieldset>
       <p>登录 BOZ<p>
-      <div class="alert"></div>
+      <div class="alert" style="display:none"></div>
       <input v-model="email" class="input-block-level" type="text" placeholder="Email">
       <input v-model="password" class="input-block-level" type="password" placeholder="Password">
       <button type="submit" class="btn pull-right">Sign in</button>

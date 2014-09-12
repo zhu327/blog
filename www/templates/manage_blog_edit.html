@@ -48,8 +48,8 @@ $(function () {
 
 $(function () {
     initVue({
-        name: '',
-        summary: '',
+        title: '',
+        tags: '',
         content: ''
     });
 });
@@ -67,7 +67,7 @@ $(function () {
 {% block content %}
         <form id="form-blog" v-on="submit: submit">
             <fieldset>
-              <div class="alert"></div>
+              <div class="alert" style="display:none"></div>
               <input v-model="title" class="input-block-level" type="text" placeholder="标题">
               <input v-model="tags" class="input-block-level" type="text" placeholder="标签:使用,分隔">
               <textarea v-model="content" rows="15" class="input-block-level" placeholder="正文:markdown格式"></textarea>
