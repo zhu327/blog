@@ -1,0 +1,85 @@
+{% extends '__manage__.html' %}
+{% set title = "日志 | BOZ" %}
+
+{% block beforehead %}
+<script>
+
+function initVM(data) {
+    $('#div-blogs').show();
+    var vm = new Vue({
+        el: '#div-blogs',
+        data: {
+            blogs: data.blogs,
+            //page: data.page
+        },
+        methods: {
+            /*previous: function () {
+                gotoPage(this.page.page_index - 1);
+            },
+            next: function () {
+                gotoPage(this.page.page_index + 1);
+            },*/
+            edit_blog: function (blog) {
+                location.assign('/manage/blogs/edit/' + blog.id);
+            },
+            delete_blog: function (blog) {
+                showConfirm('确认删除？', '确认要删除“' + blog.name + '”？删除后不可恢复！', function () {
+                    postApi('/api/blogs/' + blog.id + '/delete', {}, function (err, r) {
+                        if (err) {
+                            return showError(err);
+                        }
+                        location.reload();
+                    });
+                });
+            }
+        }
+    });
+}
+
+$(function() {
+    getApi('/api/blogs'/*?page={{ page_index }}'*/, function (err, results) {
+        if (err) {
+            return showError(err);
+        }
+        //$('#div-loading').hide();
+        initVM(results);
+    });
+});
+
+</script>
+{% endblock %}
+
+{% block nav %}
+        <li class="active"><a href="/manage/blogs">日志</a></li>
+        <li><a href="/manage/user">用户</a></li>
+{% endblock %}
+
+{% block content %}
+        <div class="alert hide"></div>
+        <div id="div-blogs" style="display:none">
+        <a href="/manage/blogs/create" class="btn"><i class="icon-plus"></i> 新日志</a>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="span3">标题 / 摘要</th>
+                <th class="span1">创建时间</th>
+                <th class="span1">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr v-repeat="blog: blogs">
+                <td>
+                    <a target="_blank" v-attr="href: '/blog/'+blog.id" v-text="blog.title"></a>
+                </td>
+                <td>
+                    <span v-text="blog.created.toDateTime()"></span>
+                </td>
+                <td>
+                    <a href="#0" v-on="click: edit_blog(blog)"><i class="icon-pencil"></i></a>
+                    <a href="#0" v-on="click: delete_blog(blog)"><i class="icon-trash"></i></a>
+                </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

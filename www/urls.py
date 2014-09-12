@@ -246,6 +246,17 @@ def api_get_blog(blog_id):
         raise APIValueError(blog_id, 'blog is not exist.')
     return blog
 
+@view('manage_blog_list.html')
+@get('/manage/blogs')
+def manage_blogs():
+    return dict()
+
+@api
+@get('/api/blogs')
+def api_get_blogs():
+    blogs, page = _get_blogs_by_page()
+    return dict(blogs=blogs, page=page)
+
 @api
 @get('/api/user')
 def api_get_user():
@@ -282,11 +293,6 @@ def register_user():
 def api_get_blogs():
     blogs, page = _get_blogs_by_page()
     return dict(blogs=blogs, page=page)
-
-@view('manage_blog_list.html')
-@get('/manage/blogs')
-def manage_blogs():
-    return dict(page_index=_get_page_index(), user=ctx.request.user)
 
 @api
 @post('/api/blogs/:blog_id/delete')
