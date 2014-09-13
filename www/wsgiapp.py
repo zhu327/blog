@@ -59,9 +59,9 @@ wsgi.template_engine = template_engine
 
 # 加载url中的函数
 import urls
-wsgi.add_model(urls)
 wsgi.add_interceptor(urls.user_interceptor)
 wsgi.add_interceptor(urls.manage_interceptor)
+wsgi.add_model(urls)
 
 # 在9000端口启动wsgi
-wsgi.run(9000)
+application = wsgi.get_wsgi_application()

@@ -41,15 +41,16 @@ def create_engine(user, passwd, db, host='127.0.0.1', port=3306, **kw):
     import MySQLdb
     global engine
     if engine:
-        raise ValueError('engine already created')
+        return
     params = dict(user=user, passwd=passwd, db=db, host=host, port=port)
-    defaults = dict(use_unicode=True, charset='utf8', autocommit=False)
+    defaults = dict(use_unicode=True, charset='utf8')
     for k in kw.iterkeys():
         if k in defaults:
             defaults.pop(k)
     params.update(defaults)
     params.update(kw)
     engine = _Engine(lambda: MySQLdb.connect(**params))
+    logging.info('MySQL connect %s' % params)
     logging.info('create engine %s' % id(engine))
 
 # 持有数据库连接的上下问对象:
