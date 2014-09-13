@@ -11,7 +11,9 @@ Boz是一个用Python实现的轻量级Blog程序。
 
 Boz现有3个分支：
 1. [awesome](https://github.com/zhu327/boz/tree/awesome)：廖雪峰教程的标准实现
+
 2. master：主分支，运行于开发环境
+
 3. [sae](https://github.com/zhu327/boz/tree/awesome): 部署在SAE(Sina App Engine)的master版本
 
 master相对与awesome的改变主要是在前端的改变，前端可分为访客面与管理面，两面相对独立。  
@@ -21,8 +23,10 @@ master相对与awesome的改变主要是在前端的改变，前端可分为访�
 开发环境：  
 OSX, Python, MySQL, MySQLdb, Jinja2, markdown2
 
-Boz设计模式：  
+Boz设计模式：
+
 1. 访客面 MVC
+
 2. 管理面 MVVM
 
 Boz实现了一个简单的Python Web框架，在www/transwarp目录下，包括对MySQLdb的封装，一个简单的ORM实现，以及一个WSGI的web框架实现。
