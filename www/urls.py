@@ -162,8 +162,9 @@ def feed():
         if blog.tags:
             blog.xtags = blog.tags.split(',')
     url = configs.get('blog_url')
-    ctx.response.content_type = 'application/atom+xml'
-    return dict(blogs=blogs, url=url)
+    user = User.find_first('')
+    ctx.response.content_type = 'application/xml'
+    return dict(blogs=blogs, url=url, user=user)
 
 @view('signin.html')
 @get('/signin')

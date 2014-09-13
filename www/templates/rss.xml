@@ -7,8 +7,8 @@
   <updated>{{ blogs.0.created | rssdate }}</updated>
   <id>http://{{ url }}/</id>
   <author>
-    <name><![CDATA[Timmy Zhu]]></name>
-    <email><![CDATA[zhu327@qq.com]]></email>
+    <name><![CDATA[{{user.name}}]]></name>
+    <email><![CDATA[{{user.email}}]]></email>
   </author>
   <generator uri="http://github.com/zhu327/boz">Boz</generator>
   {% for blog in blogs %}
