@@ -15,5 +15,5 @@ configs = {
         'passwd': sae.const.MYSQL_PASS,
         'db': sae.const.MYSQL_DB
     },
-    'blog_url': 'http://bozpy.sinaapp.com'
+    'blog_url': 'bozpy.sinaapp.com'
 }
