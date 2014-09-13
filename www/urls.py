@@ -273,12 +273,17 @@ def api_get_blogs():
     blogs, page = _get_blogs_by_page(_get_page_index(), configs.get('page').get('list_size'))
     return dict(blogs=blogs, page=page)
 
+@view('/manage_user.html')
+@get('/manage/user')
+def manage_user():
+    return dict()
+
 @api
 @get('/api/user')
 def api_get_user():
-    user = User.find_first()
+    user = User.find_first('')
     user.password = '******'
-    return dict(user=user)
+    return user
 
 _RE_MD5 = re.compile(r'^[0-9a-f]{32}$')
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
@@ -286,6 +291,7 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$'
 @api
 @post('/api/user')
 def register_user():
+    check_admin()
     i = ctx.request.input(name='', email='', password='')
     name = i['name'].strip()
     email = i['email'].strip().lower()
@@ -296,7 +302,7 @@ def register_user():
         raise APIValueError(email)
     if not password and not _RE_MD5.match(password):
         raise APIValueError(password)
-    user = User.find_first()
+    user = User.find_first('')
     user.name = name
     user.email=email
     user.password=password

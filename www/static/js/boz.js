@@ -3,7 +3,7 @@
 function showError(err) {
     var alert = $('div.alert');
     if (err) {
-        alert.text(err.message || err.error || err).show();
+        alert.text(err.message || err.error || err).removeClass('hide').show();
         try {
             if (alert.offset().top < ($(window).scrollTop() - 41)) {
                 $('html,body').animate({scrollTop: alert.offset().top - 41});

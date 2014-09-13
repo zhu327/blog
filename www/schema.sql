@@ -35,4 +35,4 @@ create table `tags` (
 
 INSERT INTO `user` (`id`, `email`, `password`, `name`)
 VALUES
-	('20140911', 'admin@boz.com', 'e10adc3949ba59abbe56e057f20f883e', 'admin');
+	('20140911', 'admin@example.com', 'e10adc3949ba59abbe56e057f20f883e', 'admin');

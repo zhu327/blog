@@ -1,0 +1,105 @@
+{% extends '__manage__.html' %}
+{% set title = "用户 | BOZ" %}
+
+{% block beforehead %}
+<script>
+
+function validateEmail(email) {
+    var re = /^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$/;
+    return re.test(email.toLowerCase());
+};
+
+function initVue(user) {
+    var vm = new Vue({
+        el: '#form-user',
+        data: {
+            name: user.name,
+            email: user.email,
+            password1: '',
+            password2: ''
+        },
+        methods: {
+            submit: function (event) {
+                event.preventDefault();
+                if (! this.name.trim()) {
+                    return showError('请输入名字');
+                }
+                if (! validateEmail(this.email.trim().toLowerCase())) {
+                    return showError('请输入正确的Email地址');
+                }
+                if (this.password1.length < 6) {
+                    return showError('口令长度至少为6个字符');
+                }
+                if (this.password1 !== this.password2) {
+                    return showError('两次输入的口令不一致');
+                }
+                postApi('/api/user', {
+                    name: this.name,
+                    email: this.email.trim().toLowerCase(),
+                    password: CryptoJS.MD5(this.password1).toString(),
+                }, function (err, r) {
+                    if (err) {
+                        showError(err);
+                    }
+                    else {
+                        return location.assign('/manage/');
+                    }
+                });
+            }
+        }
+    });
+};
+
+$(function () {
+    getApi('/api/user', function (err, user) {
+        if (err) {
+            showError(err);
+        }
+        else {
+            initVue(user);
+        }
+    });
+});
+
+</script>
+{% endblock %}
+
+{% block nav %}
+        <li><a href="/manage/blogs">日志</a></li>
+        <li class="active"><a href="/manage/user">用户</a></li>
+{% endblock %}
+
+{% block content %}
+<form id="form-user" v-on="submit: submit" class="form-horizontal">
+  <div class="alert hide"></div>
+  <div class="control-group">
+    <label class="control-label">用户名称</label>
+    <div class="controls">
+      <input v-model="name" type="text" placeholder="Name">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">邮件地址</label>
+    <div class="controls">
+      <input v-model="email" type="text" placeholder="Email">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">输入密码</label>
+    <div class="controls">
+      <input v-model="password1" type="password" placeholder="Password">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">重复密码</label>
+    <div class="controls">
+      <input v-model="password2" type="password" placeholder="Confirm password">
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="controls">
+      <button type="submit" class="btn">保存</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
