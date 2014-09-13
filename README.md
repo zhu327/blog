@@ -39,5 +39,6 @@ Boz实现了一个简单的Python Web框架，在www/transwarp目录下，包括
 3. 修改template模版，包括blog名称，about页面信息
 4. python wsgiapp.py即可运行，SAE分支还需要修改config.yaml相关信息
 5. 后台/manage/默认用户名:admin@example.com 密码:123456，首次部署后需要到/manage/user修改密码
+6. 日志评论使用[多说](http://duoshuo.com/)，需要把templates/blog.html下面的block comment修改为你自己的定制代码
 
 Boz是在业余学习的练习作品，前后学习编码差不多用了1个多月，学习了很多东西，准备输出学习笔记记录在<http://bozpy.sinaapp.com>上，各位看官如有兴趣，请订阅。
