@@ -10,13 +10,13 @@
     <header>
 
       <div class="icon"></div>
-      <a href="/blog/{{ bolg_id }}">
+      <a href="/blog/{{ blog.id }}">
       <time>
       {{ blog.created | datetime }}
       </time>
       </a>
 
-      <h1 class="title"><a href="/blog/{{ bolg_id }}">{{ blog.title }}</a></h1>
+      <h1 class="title"><a href="/blog/{{ blog.id }}">{{ blog.title }}</a></h1>
     </header>
 
     <div class="entry">
@@ -24,7 +24,7 @@
     </div>
     <footer class="end-sep">
       <div class="alignleft">
-        <a href="/blog/{{ bolg_id }}#more" class="more-link">Read More</a>
+        <a href="/blog/{{ blog.id }}#more" class="more-link">Read More</a>
       </div>
       <div class="clearfix"></div>
     </footer>

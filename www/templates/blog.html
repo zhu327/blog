@@ -38,7 +38,7 @@
 
     <section id="comment">
     <h1 class="title">Comments</h1>
-    <div class="ds-thread" data-title="{{ blog.title }}">
+    <div class="ds-thread" data-thread-key="{{ blog.id }}" data-title="{{ blog.title }}">
     </div>
     </section>
     </div>
@@ -46,14 +46,14 @@
 
 {% block comment %}
 <script type="text/javascript">
-var duoshuoQuery = {short_name:"boz"};
-    (function() {
-        var ds = document.createElement('script');
-        ds.type = 'text/javascript';ds.async = true;
-        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-        ds.charset = 'UTF-8';
-        (document.getElementsByTagName('head')[0]
-         || document.getElementsByTagName('body')[0]).appendChild(ds);
-    })();
+  var duoshuoQuery = { short_name: 'boz' };
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';
+    ds.async = true;
+    ds.src = 'http://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
 </script>
 {% endblock %}
