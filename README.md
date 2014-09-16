@@ -43,3 +43,9 @@ Boz实现了一个简单的Python Web框架，在www/transwarp目录下，包括
    具体设置CSS[请看这里](http://heroicyang.com/2013/05/22/hexo-theme-modernist/)。
 
 Boz是在业余学习的练习作品，前后学习编码差不多用了1个多月，学习了很多东西，准备输出学习笔记记录在<http://bozpy.sinaapp.com>上，各位看官如有兴趣，请订阅。
+
+#### 小工具
+
+通过文件发布文章，文件第一行为文章标题，第二行为标签，余下为正文.
+
+[postEntry.py](https://gist.github.com/zhu327/2a473332a796146b4dbd)
