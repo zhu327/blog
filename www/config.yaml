@@ -1,0 +1,16 @@
+name: bozpy
+version: 1
+accesskey: 4m5j13nn35
+worker: gevent
+libraries:
+- name: gevent
+  version: "1.0rc2"
+- name: jinja2
+  version: "2.6"
+- name: MySQLdb
+  version: "1.2.3"
+handlers:
+- url: /static/
+  static_path: static
+- url: /favicon.ico
+  static_path: favicon.ico
