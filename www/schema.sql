@@ -1,11 +1,5 @@
 -- mysql -u root -p < schema.sql
 
-drop database if exists boz;
-
-create database boz;
-
-use boz;
-
 create table `user` (
     `id` varchar(50) not null,
     `email` varchar(50) not null,
