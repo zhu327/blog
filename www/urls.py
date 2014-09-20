@@ -7,7 +7,8 @@ MVC urls
 
 import re, hashlib, time, logging
 
-from transwarp import db, markdown2
+import markdown2
+from transwarp import db
 from transwarp.web import get, post, view, interceptor, ctx, seeother, notfound
 from models import User, Blogs, Tags
 from apis import api, APIError, APIValueError, Page
@@ -41,7 +42,7 @@ def _get_blogs_by_tag(tag, page_index=1):
 
 def _get_summary(content):
     summary = '\n'.join(content.split('\n')[:configs.get('page').get('summary_size')])
-    return markdown2.markdown(summary)
+    return markdown2.markdown(summary, extras=['fenced-code-blocks', 'code-color'])
 
 def check_admin():
     user = ctx.request.user
@@ -111,7 +112,8 @@ def blog(blog_id):
         raise notfound()
     if blog.tags:
         blog.xtags = blog.tags.split(',')
-    return dict(blog=blog)
+    rps = Blogs.find_by('order by created desc limit ?', 3)
+    return dict(blog=blog, rps=rps)
 
 @view('archives.html')
 @get('/archives')
@@ -134,6 +136,12 @@ def archives_year(year):
     return dict(xblogs=[blogs])
 
 @view('tags.html')
+@get('/tags')
+def tags():
+    tags = db.select('select distinct `tag` from tags')
+    return dict(tags=tags)
+
+@view('tag.html')
 @get('/tags/:tag')
 def tag(tag):
     blogs, page = _get_blogs_by_tag(tag)
@@ -141,7 +149,7 @@ def tag(tag):
         raise notfound()
     return dict(blogs=blogs, tag=tag, page=page)
 
-@view('tags.html')
+@view('tag.html')
 @get('/tags/:tag/:page_index')
 def tag_page(tag, page_index):
     blogs, page = _get_blogs_by_tag(tag, page_index)

@@ -12,11 +12,11 @@ Boz是一个用Python实现的轻量级Blog程序。
 Boz现有3个分支：
 
 1. [awesome](https://github.com/zhu327/boz/tree/awesome)：廖雪峰教程的标准实现
-2. master：主分支，运行于开发环境
-3. [sae](https://github.com/zhu327/boz/tree/awesome): 部署在SAE(Sina App Engine)的master版本
+2. master：主分支，运行于开发环境，与SAE环境部署，需要修改配置
 
 master相对与awesome的改变主要是在前端的改变，前端可分为访客面与管理面，两面相对独立。  
-访客面UI完全clone自[Heroic Yang's Blog](http://heroicyang.com/)；  
+<del>访客面UI完全clone自[Heroic Yang's Blog](http://heroicyang.com/)；</del>  
+现在的UI clone自<http://hanjianwei.com/>，原来的theme备份到theme.zip；  
 管理面UI由[Bootstrap](https://github.com/twbs/bootstrap/)简单的拼凑出来，界面简陋，实现了Blog后台管理基本功能。
 
 开发环境：  

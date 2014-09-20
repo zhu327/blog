@@ -1,70 +1,96 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="chrome=1">
-  {% block meta %}<!-- block meta  -->{% endblock %}
-  <title>{{ title }}</title>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 
-  <link rel="alternate" href="/rss.xml" title="Timmy Zhu&#39;s Blog" type="application/atom+xml">
+  <head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+
+      {{ title }}
+
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- Icons -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-  <link rel="stylesheet" href="/static/css/style.css" type="text/css">
-  <link rel="stylesheet" href="/static/css/about.css" type="text/css">
-  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-  {% block beforehead %}<!-- before head  -->{% endblock %}
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 </head>
 
-<body>
-  <div class="wrapper">
-  <header id="header">
-  <div class="title">
-    <h1><a href="/">Timmy Zhu&#39;s Blog</a></h1>
-    <p><a href="/">Python programer, web and javascript fan.</a></p>
-  </div>
-  <nav class="nav">
-    <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/archives">Archives</a></li>
-        <li><a href="/about">About</a></li>
-        <li><a href="/rss.xml">RSS</a></li>
-    </ul>
-    <div class="clearfix"></div>
-  </nav>
-  <div class="clearfix"></div>
-</header>
 
+  <body>
+
+    <!-- Target for toggling the sidebar `.sidebar-checkbox` is for regular
+     styles, `#sidebar-checkbox` for behavior. -->
+<input type="checkbox" class="sidebar-checkbox" id="sidebar-checkbox">
+
+<!-- Toggleable sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-item">
+    <p>My notes and thoughts.</p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="sidebar-nav-item" href="/">Home</a>
+    <a class="sidebar-nav-item" href="/archives">Archives</a>
+    <a class="sidebar-nav-item" href="/tags">Tags</a>
+    <a class="sidebar-nav-item" href="/about">About</a>
+    <a class="sidebar-nav-item" href="/rss.xml">RSS</a>
+  </nav>
+
+  <div class="sidebar-item">
+    <p>
+      &copy; 2014. All rights reserved.
+    </p>
+  </div>
+</div>
+
+
+    <!-- Wrap is the content to shift when toggling the sidebar. We wrap the
+         content to avoid any CSS collisions with our real content. -->
+    <div class="wrap">
+      <div class="masthead">
+        <div class="container">
+          <h3 class="masthead-title">
+            <a href="/" title="Home">跬步</a>
+            <small>On Coding</small>
+          </h3>
+        </div>
+      </div>
+
+      <div class="container content">
 <!-- content -->
 {% block content %}
 {% endblock %}
 <!-- // content -->
+      </div>
+    </div>
 
-  </div>
-<footer id="footer"><div class="copyright">
+    <label for="sidebar-checkbox" class="sidebar-toggle"></label>
 
-&copy; 2014 <a href="/">Timmy Zhu</a> <a href="/manage/">[manage]</a>
+    <script>
+      (function(document) {
+        var toggle = document.querySelector('.sidebar-toggle');
+        var sidebar = document.querySelector('#sidebar');
+        var checkbox = document.querySelector('#sidebar-checkbox');
 
-</div>
-<div class="theme-copyright">
-Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
- |
-Redesign by <a href="https://github.com/zhu327" target="_blank">Timmy Zhu</a>
-</div>
-<div class="clearfix"></div></footer>
-<script src="http://cdn.staticfile.org/jquery/1.8.0/jquery.min.js"></script>
-<script src="/static/js/scale.fix.js"></script>
-<script src="/static/js/jquery.imagesloaded.min.js"></script>
-<script src="/static/js/gallery.js"></script>
+        document.addEventListener('click', function(e) {
+          var target = e.target;
 
-{% block comment %}{% endblock %}
+          if(!checkbox.checked ||
+             sidebar.contains(target) ||
+             (target === checkbox || target === toggle)) return;
 
-<link rel="stylesheet" href="http://cdn.staticfile.org/fancybox/2.1.1/jquery.fancybox.css" media="screen" type="text/css">
-<script src="http://cdn.staticfile.org/fancybox/2.1.1/jquery.fancybox.pack.js"></script>
-<script type="text/javascript">
-(function($){
-  $('.fancybox').fancybox();
-})(jQuery);
-</script>
-
-</body>
+          checkbox.checked = false;
+        }, false);
+      })(document);
+    </script>
+  </body>
 </html>

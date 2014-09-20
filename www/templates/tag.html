@@ -1,8 +1,11 @@
 {% extends '__base__.html' %}
-{% set title = "跬步 &middot; On Coding" %}
+{% set title = "Tag:" ~ tag ~ " &middot; 跬步" %}
 
 {% block content %}
-        <div class="posts">
+<div class="page">
+
+<h2>#{{ tag }}</h2>
+
 {% for blog in blogs %}
   <div class="post">
     <h1 class="post-title">
@@ -17,22 +20,22 @@
 
   </div>
 {% endfor %}
-</div>
 
 <div class="pagination">
 
     {% if page.has_next %}
-    <a class="pagination-item older" href="/page/{{ page.page_index + 1 }}">Older</a>
+    <a class="pagination-item older" href="/tags/{{ tag }}/{{ page.page_index + 1 }}">Older</a>
     {% else %}
     <span class="pagination-item older">Older</span>
     {% endif %}
 
 
     {% if page.has_previous %}
-    <a class="pagination-item newer" href="/page/{{ page.page_index - 1 }}">Newer</a>
+    <a class="pagination-item newer" href="/tags/{{ tag }}/{{ page.page_index - 1 }}">Newer</a>
     {% else %}
     <span class="pagination-item newer">Newer</span>
     {% endif %}
 
+</div>
 </div>
 {% endblock %}

@@ -1,43 +1,13 @@
 {% extends '__base__.html' %}
-{% set title = "Tag:" ~ tag ~ " | Timmy Zhu&#39;s Blog" %}
+{% set title = "Tags &middot; 跬步" %}
 
 {% block content %}
-    <div class="content">
-    <h2 class="archives-title tag"><span>{{ tag }}</span></h2>
-
-    {% for blog in blogs %}
-    <article class="post">
-    <header>
-
-      <div class="icon"></div>
-      <a href="/blog/{{ blog.id }}">
-      <time>
-      {{ blog.created | datetime }}
-      </time>
-      </a>
-
-      <h1 class="title"><a href="/blog/{{ blog.id }}">{{ blog.title }}</a></h1>
-    </header>
-
-    <div class="entry">
-    {{ blog.summary }}
-    </div>
-    <footer class="end-sep">
-      <div class="alignleft">
-        <a href="/blog/{{ blog.id }}#more" class="more-link">Read More</a>
-      </div>
-      <div class="clearfix"></div>
-    </footer>
-    </article>
+<div class="page">
+<h1 class="page-title">Tags</h1>
+<p>
+    {% for tag in tags %}
+    <a href="/tags/{{ tag.tag }}">{{tag.tag}}</a> 
     {% endfor %}
-    <nav id="pagination">
-    {% if page.has_previous %}
-    <a href="/tags/{{ tag }}/{{ page.page_index - 1 }}" class="prev">Prev</a>
-    {% endif %}
-    {% if page.has_next %}
-    <a href="/tags/{{ tag }}/{{ page.page_index + 1 }}" class="next">Next</a>
-    {% endif %}
-    <div class="clearfix"></div>
-    </nav>
-    </div>
+</p>
+</div>
 {% endblock %}

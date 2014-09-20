@@ -1,50 +1,42 @@
 {% extends '__base__.html' %}
-{% set title = blog.title ~ " | Timmy Zhu&#39;s Blog" %}
+{% set title = blog.title ~ " &middot; 跬步" %}
 
 {% block content %}
-    <div class="content"><article class="post">
-    <header>
-    <div class="icon"></div>
-    <a href="/blog/{{ blog.id }}">
-    <time>
-    {{ blog.created | datetime }}
-    </time>
-    </a>
+        <div class="post">
+  <h1 class="post-title">{{ blog.title }}</h1>
+  <span class="post-date">{{ blog.created | datetime }}</span>
+{{ blog.content | html }}
 
-    <h1 class="title">{{ blog.title }}</h1>
+{% if blog.xtags %}
+<div class="tags">
+{% for tag in blog.xtags %}
+  <a href="/tags/{{ tag }}">#{{ tag }}</a>
+{% endfor %}
+</div>
+{% endif %}
+</div>
 
-    </header>
+<div class="comments">
+  <div class="ds-thread" data-thread-key="{{ blog.id }}" data-title="{{ blog.title }}">
+  </div>
+</div>
 
-    <div class="entry">
-    {{ blog.content | html }}
-    </div>
-    <footer>
-
-    {% if blog.xtags %}
-    <div class="tags">
-    {% for tag in blog.xtags %}
-    {% if loop.last %}
-    <a class="tags-link" href="/tags/{{ tag }}">{{ tag }}</a>
-    {% else %}
-    <a class="tags-link" href="/tags/{{ tag }}">{{ tag }}</a>,
-    {% endif %}
-    {% endfor %}
-    </div>
-    {% endif %}
-
-    <div class="clearfix"></div>
-    </footer>
-    </article>
-
-    <section id="comment">
-    <h1 class="title">Comments</h1>
-    <div class="ds-thread" data-thread-key="{{ blog.id }}" data-title="{{ blog.title }}">
-    </div>
-    </section>
-    </div>
-{% endblock %}
-
-{% block comment %}
+<div class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+      {% for rp in rps %}
+      <li>
+        <h3>
+          <a href="/blog/{{ rp.id }}">
+            {{ rp.title }}
+            <small>{{ blog.created | datetime }}</small>
+          </a>
+        </h3>
+      </li>
+      {% endfor %}
+  </ul>
+</div>
+<!--
 <script type="text/javascript">
   var duoshuoQuery = { short_name: 'boz' };
   (function() {
@@ -56,4 +48,5 @@
     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
   })();
 </script>
+-->
 {% endblock %}

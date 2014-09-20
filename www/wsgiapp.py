@@ -11,15 +11,17 @@ WSGIApplication 运行步骤
 6.运行wsgi
 '''
 
-import sys
+import os, sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__),'lib'))
 
 import logging; logging.basicConfig(level=logging.INFO)
-import os, time
+import time
 from datetime import datetime
 
-from transwarp import db, markdown2
+import markdown2
+from transwarp import db
 from transwarp.web import WSGIApplication, Jinja2TemplateEngine
 
 from config import configs
@@ -33,25 +35,20 @@ wsgi = WSGIApplication(os.path.dirname(os.path.abspath(__file__)))
 # 定义datetime_filter,输入是t，输出是unicode字符串
 def datetime_filter(t):
     dt = datetime.fromtimestamp(t)
-    return dt.strftime('%b %d %Y')
-
-def date_filter(t):
-    dt = datetime.fromtimestamp(t)
-    return dt.strftime('%b %d')
+    return dt.strftime('%d %b %Y')
 
 def rssdate_filter(t):
     dt = datetime.fromtimestamp(t)
     return dt.isoformat()
 
 def markdown_filter(content):
-    return markdown2.markdown(content)
+    return markdown2.markdown(content, extras=['fenced-code-blocks', 'code-color'])
 
 # 初始化Jinja2模版引擎
 template_engine = Jinja2TemplateEngine(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
 
 # 把filter添加到jinja2，filter本身是一个函数对象
 template_engine.add_filter('datetime', datetime_filter)
-template_engine.add_filter('date', date_filter)
 template_engine.add_filter('rssdate', rssdate_filter)
 template_engine.add_filter('html', markdown_filter)
 
@@ -64,4 +61,7 @@ wsgi.add_interceptor(urls.manage_interceptor)
 wsgi.add_model(urls)
 
 # 在9000端口启动wsgi
-application = wsgi.get_wsgi_application()
+if __name__ == '__main__':
+    wsgi.run(9000)
+else:
+    application = wsgi.get_wsgi_application()

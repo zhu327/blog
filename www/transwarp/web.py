@@ -898,6 +898,8 @@ class WSGIApplication(object):
                 return []
             except HttpError, e:
                 start_response(e.status, response.headers)
+                if e.status == '404 Not Found' and os.path.exists(r'templates/404.html'):
+                    return self._temlate_engine('404.html', dict())
                 return ['<html><body><h1>', e.status, '</h1></body></html>']
             except Exception, e:
                 logging.exception(e)

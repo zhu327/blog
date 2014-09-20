@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title><![CDATA[Timmy Zhu's Blog]]></title>
-  <subtitle><![CDATA[Python programer, web and javascript fan.]]></subtitle>
+  <title><![CDATA[跬步]]></title>
+  <subtitle><![CDATA[On Coding]]></subtitle>
   <link href="http://{{ url }}/rss.xml" rel="self"/>
   <link href="http://{{ url }}"/>
   <updated>{{ blogs.0.created | rssdate }}</updated>
