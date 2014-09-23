@@ -12,5 +12,7 @@ libraries:
 handlers:
 - url: /static/
   static_path: static
+  gzip: on
 - url: /favicon.ico
   static_path: favicon.ico
+  gzip: on
