@@ -54,7 +54,7 @@ def create_engine(user, passwd, db, host='127.0.0.1', port=3306, **kw):
     logging.info('create engine %s' % id(engine))
 
 # 持有数据库连接的上下问对象:
-class _DbCtx(object):
+class _DbCtx(threading.local):
     def __init__(self):
         self.connect = None
         self.transactions = 0

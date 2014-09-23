@@ -927,8 +927,6 @@ class WSGIApplication(object):
         server = make_server(host, port, self.get_wsgi_application(debug=True))
         server.serve_forever()
 
-wsgi = WSGIApplication()
-
 '''
 if __name__ == '__main__':
     wsgi.run()
