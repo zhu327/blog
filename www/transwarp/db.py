@@ -25,7 +25,44 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 # 1
 '''
 
-import threading, functools, logging
+import threading, functools, logging, hashlib
+import pylibmc
+
+class Memcached(threading.local):
+    def __init__(self):
+        self._mc = lambda :pylibmc.Client()
+        self.con = None
+
+    def _connect(self):
+        if not self.con:
+            self.con = self._mc()
+
+    def clean(self):
+        if self.con:
+            self.con.disconnect_all()
+            self.con = None
+
+    def get(self, sql, args):
+        key = self._key(sql, args)
+        logging.info('MC get %s' % key)
+        self._connect()
+        return self.con.get(key)
+
+    def set(self, sql, args, data):
+        key = self._key(sql, args)
+        logging.info('MC set %s' % key)
+        self._connect()
+        self.con.set(key, data)
+
+    def flush(self):
+        self._connect()
+        self.con.flush_all()
+
+    def _key(self, sql, args):
+        return hashlib.md5(sql % args).hexdigest()
+
+
+mc = Memcached()
 
 # 数据库引擎对象，包装了数据库连接函数
 class _Engine(object):
@@ -203,12 +240,19 @@ def select(sql, *args):
     logging.info('select sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
+        r = mc.get(sql, args)
+        if r:
+            logging.info('MC get data')
+            return r
         cursor = _db_cxt.cursor()
         cursor.execute(sql, args)
         if cursor.description:
             names = [x[0] for x in cursor.description]
-        return [dict(zip(names, x)) for x in cursor.fetchall()]
+        r = [dict(zip(names, x)) for x in cursor.fetchall()]
+        mc.set(sql, args, r)
+        return r
     finally:
+        mc.clean()
         if cursor:
             cursor.close()
 
@@ -219,6 +263,7 @@ def execute(sql, *args):
     logging.info('execute sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
+        mc.flush()
         cursor = _db_cxt.cursor()
         cursor.execute(sql, args)
         r = cursor.rowcount
@@ -227,6 +272,7 @@ def execute(sql, *args):
             logging.info('auto commit')
         return r
     finally:
+        mc.clean()
         if cursor:
             cursor.close()
 
@@ -266,6 +312,7 @@ def insert_id(table, **kw):
     logging.info('execute sql: %s, args: %s' % (sql, args))
     cursor = None
     try:
+        mc.flush()
         cursor = _db_cxt.cursor()
         cursor.execute(sql, args)
         r = int(cursor.lastrowid)
@@ -274,6 +321,7 @@ def insert_id(table, **kw):
             logging.info('auto commit')
         return r
     finally:
+        mc.clean()
         if cursor:
             cursor.close()
 
