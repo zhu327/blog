@@ -467,7 +467,7 @@ class Response(object):
         if not hasattr(self, '_cookie'):
             self._cookie = {}
         l = ['%s=%s' % (urllib.quote(name), urllib.quote(value))]
-        if not expires:
+        if expires:
             if isinstance(expires, (float, int, long)):
                 l.append('Expires=%s' % datetime.datetime.fromtimestamp(expires, UTC_0).strftime('%a, %d-%b-%Y %H:%M:%S GMT'))
             if isinstance(expires, (datetime.datetime, datetime.time)):

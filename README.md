@@ -13,6 +13,7 @@ Boz现有3个分支：
 
 1. [awesome](https://github.com/zhu327/boz/tree/awesome)：廖雪峰教程的标准实现
 2. master：主分支，运行于开发环境，与SAE环境部署，需要修改配置
+3. memcached: 新增分分支，利用SAE Memcached来缓存MySQL查询结果
 
 master相对与awesome的改变主要是在前端的改变，前端可分为访客面与管理面，两面相对独立。  
 <del>访客面UI完全clone自[Heroic Yang's Blog](http://heroicyang.com/)；</del>  
