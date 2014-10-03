@@ -2,7 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
     <loc>http://{{ url }}/</loc>
-    <lastmod>{{ blogs.0.created | rssdate }}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
 </url>
@@ -27,7 +26,6 @@
 {% for blog in blogs %}
 <url>
     <loc>http://{{ url }}/blog/{{ blog.id }}</loc>
-    <lastmod>{{ blog.created | rssdate }}</lastmod>
     <changefreq>monthly</changefreq>
 </url>
 {% endfor %}
