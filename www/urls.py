@@ -174,6 +174,14 @@ def feed():
     ctx.response.content_type = 'application/xml'
     return dict(blogs=blogs, url=url, user=user)
 
+@view('sitemap.xml')
+@get('/sitemap.xml')
+def sitemap():
+    blogs = db.select('select `id`,`created` from `blogs` order by `created` desc limit ?', 100)
+    url = configs.get('blog_url')
+    ctx.response.content_type = 'application/xml'
+    return dict(blogs=blogs, url=url)
+
 @view('signin.html')
 @get('/signin')
 def signin():
