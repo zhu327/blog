@@ -20,6 +20,8 @@ class APIValueError(APIError):
 
 class Page(dict):
     def __init__(self, item_count, page_index=1, page_size=10):
+        self.__dict__ = self
+        
         self.item_count = item_count
         self.page_size = page_size
         self.page_count = item_count // page_size + (1 if item_count % page_size > 0 else 0)
@@ -33,14 +35,6 @@ class Page(dict):
             self.limit = self.page_size
         self.has_next = self.page_index < self.page_count
         self.has_previous = self.page_index > 1
-        self['item_count'] = self.item_count
-        self['page_size'] = self.page_size
-        self['page_count'] = self.page_count
-        self['page_index'] = self.page_index
-        self['offset'] = self.offset
-        self['limit'] = self.limit
-        self['has_next'] = self.has_next
-        self['has_previous'] = self.has_previous
 
 # 返回查询好的数据并生成json格式
 def api(func):
