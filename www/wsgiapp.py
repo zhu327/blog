@@ -14,35 +14,21 @@ WSGIApplication 运行步骤
 import os, sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-sys.path.insert(0, os.path.join(os.path.dirname(__file__),'lib'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'site-packages.zip'))
 
 import logging; logging.basicConfig(level=logging.INFO)
-import time
-from datetime import datetime
 
-import markdown2
 from transwarp import db
 from transwarp.web import WSGIApplication, Jinja2TemplateEngine
 
 from config import configs
+from filters import datetime_filter, rssdate_filter, markdown_filter
 
 # 初始化数据库
 db.create_engine(**configs['db'])
 
 # 创建一个WSGIApplication
 wsgi = WSGIApplication(os.path.dirname(os.path.abspath(__file__)))
-
-# 定义datetime_filter,输入是t，输出是unicode字符串
-def datetime_filter(t):
-    dt = datetime.fromtimestamp(t)
-    return dt.strftime('%d %b %Y')
-
-def rssdate_filter(t):
-    dt = datetime.fromtimestamp(t)
-    return dt.isoformat()
-
-def markdown_filter(content):
-    return markdown2.markdown(content, extras=['fenced-code-blocks', 'code-color'])
 
 # 初始化Jinja2模版引擎
 template_engine = Jinja2TemplateEngine(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))

@@ -1,6 +1,3 @@
-from gevent import monkey
-monkey.patch_all()
-
 import sae
 import wsgiapp
 
