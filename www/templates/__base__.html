@@ -21,7 +21,7 @@
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
   <!-- RSS -->
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/feed">
 </head>
 
 
@@ -39,11 +39,10 @@
 
   <nav class="sidebar-nav">
     <a class="sidebar-nav-item" href="/">Home</a>
-    <a class="sidebar-nav-item" href="/rss.xml">RSS</a>
     <a class="sidebar-nav-item" href="/archives">Archives</a>
     <a class="sidebar-nav-item" href="/tags">Tags</a>
     <a class="sidebar-nav-item" href="/about">About</a>
-    <a class="sidebar-nav-item" href="https://github.com/zhu327/blog" target="_blank">Github</a>
+    <a class="sidebar-nav-item" href="https://github.com/zhu327" target="_blank">Github</a>
     <a class="sidebar-nav-item" href="/manage/">Admin</a>
   </nav>
 
@@ -93,6 +92,15 @@
           checkbox.checked = false;
         }, false);
       })(document);
-    </script>
+
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?5ccd91e586b9b658e34c3872d2806560";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
   </body>
 </html>

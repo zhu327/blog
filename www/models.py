@@ -10,7 +10,7 @@ blogpy 数据库表定义
 import time
 from datetime import datetime
 
-from transwarp.orm import Model, IntegerField, StringField, BooleanField, FloatField, TextField
+from transwarp.orm import Model, IntegerField, StringField, FloatField, TextField
 
 class User(Model):
     __table__ = 'user'

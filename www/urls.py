@@ -5,9 +5,9 @@
 MVC urls
 '''
 
-import re, hashlib, time, logging
+import re, hashlib, time
 
-import markdown2
+from utils import md, get_summary
 from transwarp import db
 from transwarp.web import get, post, view, interceptor, ctx, seeother, notfound
 from models import User, Blogs, Tags
@@ -41,8 +41,7 @@ def _get_blogs_by_tag(tag, page_index=1):
     return blogs, page
 
 def _get_summary(content):
-    summary = '\n'.join(content.split('\n')[:configs.get('page').get('summary_size')])
-    return markdown2.markdown(summary, extras=['fenced-code-blocks', 'code-color'])
+    return md.render(get_summary(content))
 
 def check_admin():
     user = ctx.request.user
@@ -163,7 +162,7 @@ def about():
     return dict()
 
 @view('rss.xml')
-@get('/rss.xml')
+@get('/feed')
 def feed():
     blogs = Blogs.find_by('order by created desc limit ?', 10)
     for blog in blogs:

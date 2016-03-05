@@ -26,11 +26,12 @@ n = db.update('insert int user(id, name)' value(?, ?)', 4, 'Jack')
 '''
 
 import threading, functools, logging, hashlib
-import pylibmc
+# import pylibmc // 替换memcached为SAE KVDB
+import sae.kvdb
 
 class Memcached(threading.local):
     def __init__(self):
-        self._mc = lambda :pylibmc.Client()
+        self._mc = lambda :sae.kvdb.Client()
         self.con = None
 
     def _connect(self):
@@ -56,7 +57,8 @@ class Memcached(threading.local):
 
     def flush(self):
         self._connect()
-        self.con.flush_all()
+        keys = self.con.getkeys_by_prefix('', 10000)
+        map(self.con.delete, keys)
 
     def _key(self, sql, args):
         return hashlib.md5(sql % args).hexdigest()
