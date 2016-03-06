@@ -4,9 +4,13 @@
 __author__ = 'zhu327'
 
 import json, functools
+from datetime import datetime
 
 from transwarp.web import ctx
 from config import configs
+
+def date_handler(obj):
+    return obj.strftime('%d %b %Y') if isinstance(obj, datetime) else obj
 
 _PAGE_SIZE = configs.get('page').get('page_size')
 
@@ -55,7 +59,7 @@ def api(func):
     @functools.wraps(func)
     def _wrapper(*args, **kw):
         try:
-            r = json.dumps(func(*args, **kw))
+            r = json.dumps(func(*args, **kw), default=date_handler)
         except APIError, e:
             r = json.dumps(dict(error=e.error, date=e.data, message=e.message))
         except Exception, e:

@@ -6,7 +6,7 @@ create table `user` (
     `password` varchar(50) not null,
     `name` varchar(50) not null,
     primary key(`id`)
-) engine=innodb default charset=utf8;
+) engine=MyISAM default charset=utf8;
 
 create table `blogs` (
     `id` int(10) not null auto_increment,
@@ -14,18 +14,16 @@ create table `blogs` (
     `summary` mediumtext not null,
     `content` text not null,
     `tags` varchar(50),
-    `created` real not null,
-    `year` int(5) not null,
-    key `idx_created` (`created`),
+    `created` datetime DEFAULT NULL,
     primary key(`id`)
-) engine=innodb default charset=utf8;
+) engine=MyISAM default charset=utf8;
 
 create table `tags` (
     `id` int(10) not null auto_increment,
     `tag` varchar(50) not null,
     `blog` int(10) not null,
     primary key(`id`)
-) engine=innodb default charset=utf8;
+) engine=MyISAM default charset=utf8;
 
 INSERT INTO `user` (`id`, `email`, `password`, `name`)
 VALUES

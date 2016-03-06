@@ -71,7 +71,7 @@ $(function() {
                     <a target="_blank" v-attr="href: '/blog/'+blog.id" v-text="blog.title"></a>
                 </td>
                 <td>
-                    <span v-text="blog.created.toDateTime()"></span>
+                    <span v-text="blog.created"></span>
                 </td>
                 <td>
                     <a href="#" v-on="click: edit_blog(blog)"><i class="icon-pencil"></i></a>

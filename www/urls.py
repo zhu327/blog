@@ -6,6 +6,7 @@ MVC urls
 '''
 
 import re, hashlib, time
+from collections import OrderedDict
 
 from utils import md, get_summary
 from transwarp import db
@@ -37,7 +38,7 @@ def _get_blogs_by_page(page_index=1, page_size=None):
 def _get_blogs_by_tag(tag, page_index=1):
     total = Tags.count_by('where `tag` = ?', tag)
     page = Page(total, int(page_index))
-    blogs = Blogs.find_by('where `id` in (select `blog` from tags where `tag` = ?) order by created desc limit ?,?', tag, page.offset, page.limit)
+    blogs = Blogs.find_by('LEFT JOIN `tags` ON `tags`.`blog` = `blogs`.`id` WHERE `tags`.`tag` = ? ORDER BY `created` DESC limit ?,?', tag, page.offset, page.limit)
     return blogs, page
 
 def _get_summary(content):
@@ -117,19 +118,22 @@ def blog(blog_id):
 @view('archives.html')
 @get('/archives')
 def archives():
-    years = db.select('select distinct `year` from `blogs` order by created desc')
-    if not years:
+    sql = 'SELECT YEAR(`created`) AS `year`, `id`, `title`, `created` FROM `blogs` ORDER BY `created` DESC'
+    blogs = db.select(sql)
+    if not blogs:
         raise notfound()
-    xblogs = list()
-    for y in years:
-        blogs = Blogs.find_by('where `year` = ? order by created desc', y.get('year'))
-        xblogs.append(blogs)
+    xblogs = OrderedDict()
+    for blog in blogs:
+        if not blog['year'] in xblogs:
+            xblogs[blog['year']] = [blog]
+        else:
+            xblogs[blog['year']].append(blog)
     return dict(xblogs=xblogs)
 
 @view('archives.html')
 @get('/archives/:year')
 def archives_year(year):
-    blogs = Blogs.find_by('where `year` = ? order by created desc', year)
+    blogs = Blogs.find_by('WHERE YEAR(`created`) = ? ORDER BY `created` DESC', year)
     if not blogs:
         raise notfound()
     return dict(xblogs=[blogs])
@@ -137,7 +141,7 @@ def archives_year(year):
 @view('tags.html')
 @get('/tags')
 def tags():
-    tags = db.select('select distinct `tag` from tags')
+    tags = db.select('SELECT COUNT(`id`) AS `count`, `tag` from tags GROUP BY `tag` ORDER BY `count` DESC')
     return dict(tags=tags)
 
 @view('tag.html')
@@ -223,10 +227,12 @@ def api_create_blog():
     summary = _get_summary(content)
     blog = Blogs(title=title, tags=tags, summary=summary, content=content)
     id = blog.insert_id()
+    tags = tags.split(',')
     if tags:
-        for tag in tags.split(','):
-            tag = Tags(tag=tag, blog=id)
-            tag.insert()
+        sql = "INSERT INTO `tags` (`tag`, `blog`) VALUES {}".format(', '.join(map(
+            lambda x: "('{}', '{}')".format(x, id), tags
+        )))
+        db.execute(sql)
     return dict(id=id)
 
 @view('manage_blog_edit.html')
@@ -259,10 +265,12 @@ def api_modify_blog(blog_id):
     blog.tags = tags
     blog.update()
     db.execute('delete from `tags` where `blog`=?', blog_id)
+    tags = tags.split(',')
     if tags:
-        for tag in tags.split(','):
-            tag = Tags(tag=tag, blog=blog_id)
-            tag.insert()
+        sql = "INSERT INTO `tags` (`tag`, `blog`) VALUES {}".format(', '.join(map(
+            lambda x: "('{}', '{}')".format(x, blog_id), tags
+        )))
+        db.execute(sql)
     return dict(id=blog_id)
 
 @api

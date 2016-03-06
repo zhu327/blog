@@ -4,13 +4,13 @@
 {% block content %}
         <div class="page">
   <h1 class="page-title">Archives</h1>
-{% for blogs in xblogs %}
-{% for blog in blogs %}
+{% for year in xblogs.keys() %}
+{% for blog in xblogs[year] %}
 {% if loop.first %}
-<h2><a href="/archives/{{ blog.year }}">{{ blog.year }}</a></h2>
+<h2><a href="/archives/{{ year }}">{{ year }}</a></h2>
 {% endif %}
 
-<p><a href="/blog/{{ blog.id }}">{{ blog.title }}</a> <span class="pull-right">{{ blog.created | datetime }}</span></p>
+<p><a href="/blog/{{ blog['id'] }}">{{ blog['title'] }}</a> <span class="pull-right">{{ blog['created'] | datetime }}</span></p>
 
 {% endfor %}
 {% endfor %}

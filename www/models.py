@@ -7,10 +7,9 @@ __author__ = 'zhu327'
 blogpy 数据库表定义
 '''
 
-import time
 from datetime import datetime
 
-from transwarp.orm import Model, IntegerField, StringField, FloatField, TextField
+from transwarp.orm import Model, IntegerField, StringField, DatetimeField, TextField
 
 class User(Model):
     __table__ = 'user'
@@ -28,8 +27,7 @@ class Blogs(Model):
     summary = TextField(datatype='mediumtext')
     content = TextField()
     tags = StringField(datatype='varchar(50)')
-    created = FloatField(updateable=False, default=time.time)
-    year = IntegerField(datatype='int(5)', updateable=False, default=datetime.now().year)
+    created = DatetimeField(updateable=False, default=datetime.now)
 
 class Tags(Model):
     __table__ = 'tags'

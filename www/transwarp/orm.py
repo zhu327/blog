@@ -96,6 +96,16 @@ class BlobField(Field):
             kw['datatype'] = 'blob'
         super(BlobField, self).__init__(**kw)
 
+class DatetimeField(Field):
+
+    def __init__(self, **kw):
+        if not 'default' in kw:
+            kw['default'] = ''
+        if not 'datatype' in kw:
+            kw['datatype'] = 'datetime'
+        super(DatetimeField, self).__init__(**kw)
+
+
 class VersionField(Field):
 
     def __init__(self, name=None):
