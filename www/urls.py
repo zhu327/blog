@@ -130,14 +130,6 @@ def archives():
             xblogs[blog['year']].append(blog)
     return dict(xblogs=xblogs)
 
-@view('archives.html')
-@get('/archives/:year')
-def archives_year(year):
-    blogs = Blogs.find_by('WHERE YEAR(`created`) = ? ORDER BY `created` DESC', year)
-    if not blogs:
-        raise notfound()
-    return dict(xblogs=[blogs])
-
 @view('tags.html')
 @get('/tags')
 def tags():
