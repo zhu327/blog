@@ -20,7 +20,8 @@ class BleepRenderer(m.HtmlRenderer, m.SmartyPants):
 
 renderer = BleepRenderer()
 md = m.Markdown(renderer,
-    extensions=m.EXT_FENCED_CODE | m.EXT_NO_INTRA_EMPHASIS)
+    extensions=m.EXT_FENCED_CODE | m.EXT_NO_INTRA_EMPHASIS |
+        m.EXT_AUTOLINK | m.EXT_LAX_HTML_BLOCKS | m.EXT_TABLES)
 
 
 def get_summary(content):
