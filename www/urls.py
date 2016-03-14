@@ -38,7 +38,7 @@ def _get_blogs_by_page(page_index=1, page_size=None):
 def _get_blogs_by_tag(tag, page_index=1):
     total = Tags.count_by('where `tag` = ?', tag)
     page = Page(total, int(page_index))
-    sql = 'SELECT `blogs`.* FROM `blogs`LEFT JOIN `tags` ON `tags`.`blog` = `blogs`.`id` WHERE `tags`.`tag` = ? ORDER BY `created` DESC limit ?,? '
+    sql = 'SELECT `blogs`.* FROM `blogs` LEFT JOIN `tags` ON `tags`.`blog` = `blogs`.`id` WHERE `tags`.`tag` = ? ORDER BY `created` DESC limit ?,? '
     blogs = db.select(sql, tag, page.offset, page.limit)
     return blogs, page
 
